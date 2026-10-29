@@ -2,10 +2,10 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-  /* Layout: a quiet gallery wall. The home is an empty table where each Figma frame sits as a card;
-     opening one puts that frame full-width in a scroll stage, arrows step frame to frame. */
+  /* Layout: a quiet gallery wall. The home is an empty table where each Figma frame sits as a live
+     miniature; opening one renders that frame as real, scrollable HTML, arrows step frame to frame. */
   :root {
     --bg: #ecebe8;
     --surface: #f6f5f2;
@@ -15,7 +15,10 @@
     --accent: #7300ff;
     --stage: #e3e2de;
     --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+    --sans: "Helvetica Neue", Helvetica, "TeX Gyre Heros", Arial, sans-serif;
     --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --ease: cubic-bezier(.2, .7, .2, 1);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -28,6 +31,7 @@
     --line: #2e2d2a; --accent: #a56bff; --stage: #0e0e0d; color-scheme: dark;
   }
 
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     background: var(--bg);
@@ -35,9 +39,7 @@
     font-family: var(--serif);
     -webkit-font-smoothing: antialiased;
   }
-  [hidden] { display: none !important; }
   button { font: inherit; color: inherit; }
-  .stage:focus { outline: none; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
   .label {
@@ -67,17 +69,12 @@
     gap: 16px;
     flex-wrap: wrap;
   }
-  .home-head h1 {
-    margin: 0;
-    font-weight: 400;
-    font-size: 22px;
-    letter-spacing: -0.01em;
-  }
+  .home-head h1 { margin: 0; font-weight: 400; font-size: 22px; letter-spacing: -0.01em; }
   .home-head h1 span { color: var(--muted); }
   .wall {
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 420px));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 460px));
     gap: 40px 32px;
     align-content: start;
     list-style: none;
@@ -93,7 +90,7 @@
     border: 0;
     background: none;
     text-align: left;
-    cursor: pointer;
+    cursor: none;
   }
   .card-frame {
     position: relative;
@@ -103,29 +100,56 @@
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgb(0 0 0 / 0.04);
-    transition: transform 0.35s cubic-bezier(.2,.7,.2,1), box-shadow 0.35s;
+    transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease);
   }
-  .card-frame img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top;
+  .card-frame .mini {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1920px;
+    transform-origin: 0 0;
+    transform: scale(var(--s, 0.2));
+    pointer-events: none;
   }
+  .card-frame .mini.gray { filter: grayscale(1) contrast(1.04); }
+  .card-frame .mini.color {
+    clip-path: circle(0% at var(--x, 50%) var(--y, 50%));
+    transition: clip-path 0.9s var(--ease-out);
+  }
+  .mini.color .pf-media .gray { visibility: hidden; }
+  .mini.color .pf-media .color { clip-path: none; }
+  .card:hover .mini.color,
+  .card:focus-visible .mini.color { clip-path: circle(150% at var(--x, 50%) var(--y, 50%)); }
   .card:hover .card-frame,
   .card:focus-visible .card-frame {
-    transform: translateY(-4px);
-    box-shadow: 0 0 0 1px var(--line), 0 18px 40px -18px rgb(0 0 0 / 0.35);
+    transform: translateY(-6px);
+    box-shadow: 0 0 0 1px var(--line), 0 24px 50px -22px rgb(0 0 0 / 0.4);
   }
   .card:focus-visible { outline: none; }
   .card:focus-visible .card-frame { outline: 2px solid var(--accent); outline-offset: 4px; }
-  .card-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
-  }
+  .card-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .card-title { font-size: 19px; letter-spacing: -0.01em; }
+  .card-title em { color: var(--muted); font-style: italic; }
+  .cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 30;
+    pointer-events: none;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.35s var(--ease-out);
+    white-space: nowrap;
+  }
+  .cursor.on { transform: translate(-50%, -50%) scale(1); }
+  @media (hover: none) { .card { cursor: pointer; } .cursor { display: none; } }
   .home-foot { display: flex; gap: 20px; flex-wrap: wrap; }
   kbd {
     font-family: var(--mono);
@@ -158,6 +182,17 @@
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     background: var(--bg);
     border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .progress {
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    height: 1px;
+    width: 100%;
+    background: var(--ink);
+    transform-origin: 0 50%;
+    transform: scaleX(var(--p, 0));
   }
   .bar-title {
     font-size: 16px;
@@ -190,28 +225,14 @@
   .btn svg { width: 14px; height: 14px; }
   .count { padding: 0 6px; }
 
-  .stage {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    scroll-behavior: smooth;
-  }
+  .stage { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+  .stage:focus { outline: none; }
   .stage-inner {
-    container-type: inline-size;
-    width: min(100%, var(--frame-w, 1920px));
+    width: min(100%, 1984px);
     margin: 0 auto;
     box-sizing: border-box;
     padding: clamp(0px, 2vw, 32px);
     padding-bottom: 64px;
-  }
-  .stage-inner img {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: 1.05cqw;
-    box-shadow: 0 30px 80px -40px rgb(0 0 0 / 0.35);
-    background: var(--surface);
   }
   .stage-end {
     display: flex;
@@ -221,19 +242,213 @@
     flex-wrap: wrap;
     padding-top: 28px;
   }
-  .viewer.enter .stage-inner { animation: rise 0.45s cubic-bezier(.2,.7,.2,1); }
-  @keyframes rise { from { opacity: 0.4; transform: translateY(12px); } }
-
   @media (max-width: 560px) {
     .bar { grid-template-columns: auto 1fr auto; }
     .back-text { display: none; }
     .stage-inner { padding: 0 0 48px; }
-    .stage-inner img { border-radius: 0; }
     .stage-end { padding-inline: 16px; }
   }
+
+  /* ---------- Percepta frame: Benefits and Perks ----------
+     Built on the Figma frame's 1920px grid. --u is one Figma pixel at the current width. */
+  .pf-wrap { container-type: inline-size; width: 100%; }
+  .pf {
+    --u: calc(100cqw / 1920);
+    --pf-bg: #f4f4f4;
+    --pf-ink: #272727;
+    --pf-ink-75: rgb(39 39 39 / 0.75);
+    --pf-ink-50: rgb(39 39 39 / 0.5);
+    --violet: #9995e9;
+    --sky: #8bb5ff;
+    --lilac: #ded7fc;
+    color-scheme: light;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--pf-bg);
+    color: var(--pf-ink);
+    border-radius: max(10px, calc(var(--u) * 20));
+    min-height: calc(var(--u) * 1371);
+    box-sizing: border-box;
+    padding: calc(var(--u) * 40) max(16px, calc(var(--u) * 48)) calc(var(--u) * 80);
+    font-family: var(--sans);
+    box-shadow: 0 30px 80px -40px rgb(0 0 0 / 0.35);
+  }
+  .pf-nav { display: flex; align-items: center; gap: max(32px, calc(var(--u) * 96)); height: max(28px, calc(var(--u) * 30)); }
+  .pf-logo {
+    font-family: var(--serif);
+    font-size: max(17px, calc(var(--u) * 22));
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .pf-tabs { position: relative; display: flex; align-items: center; gap: max(6px, calc(var(--u) * 2)); }
+  .pf-tab {
+    position: relative;
+    z-index: 1;
+    padding: max(8px, calc(var(--u) * 10));
+    cursor: pointer;
+    font-size: max(12px, calc(var(--u) * 14));
+    letter-spacing: 0.02em;
+    color: var(--pf-ink-50);
+    transition: color 0.3s;
+  }
+  .pf-tab:hover, .pf-tab.is-on { color: var(--pf-ink); }
+  .pf-pill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 999px;
+    background: #fff;
+    transition: transform 0.45s var(--ease-out), width 0.45s var(--ease-out);
+  }
+
+  .pf-hero {
+    display: grid;
+    grid-template-columns: calc(var(--u) * 820) 1fr;
+    align-items: end;
+    margin-top: calc(var(--u) * 130);
+  }
+  .pf-h1 {
+    margin: 0;
+    max-width: calc(var(--u) * 640);
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: max(54px, calc(var(--u) * 144));
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+  }
+  .pf-intro {
+    margin: 0 0 calc(var(--u) * 6);
+    max-width: calc(var(--u) * 595);
+    font-size: max(16px, calc(var(--u) * 20));
+    line-height: 1.12;
+    letter-spacing: 0.02em;
+    color: var(--pf-ink-75);
+    text-wrap: pretty;
+  }
+
+  .pf-grid {
+    display: grid;
+    grid-template-columns: repeat(4, calc(var(--u) * 390));
+    gap: calc(var(--u) * 20);
+    align-items: start;
+    margin-top: calc(var(--u) * 133);
+  }
+  .pf-item { display: flex; flex-direction: column; cursor: default; }
+  .pf-num {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: max(13px, calc(var(--u) * 16));
+    letter-spacing: -0.02em;
+    margin-bottom: calc(var(--u) * 12);
+    display: flex;
+    justify-content: space-between;
+  }
+  .pf-num span:last-child { opacity: 0; transform: translateX(-6px); transition: opacity 0.4s, transform 0.5s var(--ease-out); }
+  .pf-item:hover .pf-num span:last-child { opacity: 1; transform: none; }
+  .pf-media { position: relative; overflow: hidden; background: #e2e2e2; }
+  .pf-media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s var(--ease-out);
+  }
+  .pf-media .gray { filter: grayscale(1) contrast(1.06) brightness(1.02); }
+  .pf-media .color {
+    clip-path: circle(0% at var(--x, 50%) var(--y, 50%));
+    transition: clip-path 0.9s var(--ease-out), transform 1.2s var(--ease-out);
+  }
+  .pf-item:hover .pf-media img { transform: scale(1.045); }
+  .pf-item:hover .pf-media .color,
+  .pf-item.is-lit .pf-media .color { clip-path: circle(145% at var(--x, 50%) var(--y, 50%)); }
+  .pf-title {
+    margin: calc(var(--u) * 16) 0 0;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: max(19px, calc(var(--u) * 28));
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--pf-ink-75);
+    transition: color 0.4s;
+    text-wrap: balance;
+  }
+  .pf-desc {
+    margin: calc(var(--u) * 12) 0 0;
+    max-width: calc(var(--u) * 375);
+    font-size: max(13px, calc(var(--u) * 16));
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    color: var(--pf-ink-50);
+    transition: color 0.4s;
+  }
+  .pf-item:hover .pf-title, .pf-item.is-lit .pf-title { color: var(--pf-ink); }
+  .pf-item:hover .pf-desc, .pf-item.is-lit .pf-desc { color: var(--pf-ink-75); }
+
+  .pf-sq {
+    position: absolute;
+    width: calc(var(--u) * 31);
+    height: calc(var(--u) * 31);
+    left: calc(var(--u) * var(--sx));
+    top: calc(var(--u) * var(--sy));
+    background: var(--c);
+    z-index: -1;
+    transform: translate(var(--mx, 0px), var(--my, 0px));
+    transition: transform 0.9s var(--ease-out);
+  }
+  .pf-sq i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    animation: drift var(--d, 7s) ease-in-out var(--dl, 0s) infinite alternate;
+  }
+  @keyframes drift { to { transform: translateY(calc(var(--u) * -14)) rotate(0.001deg); } }
+
+  .pf-noise {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    opacity: 0.5;
+    z-index: 2;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Narrow screens: same parts, stacked */
+  @container (max-width: 760px) {
+    .pf { padding-bottom: 140px; }
+    .pf-hero { grid-template-columns: 1fr; gap: 24px; margin-top: 64px; }
+    .pf-h1, .pf-intro { max-width: 100%; }
+    .pf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 14px; margin-top: 56px; }
+    .pf-num { margin-bottom: 8px; }
+    .pf-title { margin-top: 12px; }
+    .pf-desc { margin-top: 8px; max-width: 100%; }
+    .pf { min-height: 0; }
+    .pf-sq { width: 18px; height: 18px; top: auto; bottom: calc((1371 - var(--sy)) * 0.55px); }
+  }
+
+  /* Entry reveals (only in the live viewer; miniatures render at rest) */
+  .m { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.14em; margin-bottom: -0.14em; }
+  .mi { display: inline-block; }
+  .pf.anim .mi { transform: translateY(110%); transition: transform 1.1s var(--ease-out); transition-delay: calc(var(--i, 0) * 55ms + var(--base, 0ms)); }
+  .pf.anim .in .mi, .pf.anim.in .pf-h1 .mi { transform: none; }
+  .pf.anim .fade { opacity: 0; transform: translateY(10px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease-out); transition-delay: var(--base, 0ms); }
+  .pf.anim .fade.in { opacity: 1; transform: none; }
+  .pf.anim .pf-media { clip-path: inset(100% 0 0 0); transition: clip-path 1.2s var(--ease-out); transition-delay: var(--base, 0ms); }
+  .pf.anim .pf-media img { transform: scale(1.18); }
+  .pf.anim .in .pf-media { clip-path: inset(0 0 0 0); }
+  .pf.anim .in .pf-media img { transform: scale(1); }
+  .pf.anim .in:hover .pf-media img { transform: scale(1.045); }
+  .pf.anim .pf-sq { opacity: 0; scale: 0.2; transition: opacity 0.6s, scale 0.9s var(--ease-out), transform 0.9s var(--ease-out); transition-delay: calc(var(--k) * 70ms + 700ms), calc(var(--k) * 70ms + 700ms), 0s; }
+  .pf.anim.in .pf-sq { opacity: 1; scale: 1; }
+
   @media (prefers-reduced-motion: reduce) {
-    .card-frame, .viewer.enter .stage-inner { transition: none; animation: none; }
-    .stage { scroll-behavior: auto; }
+    .pf.anim .mi, .pf.anim .fade, .pf.anim .pf-media, .pf.anim .pf-media img, .pf.anim .pf-sq { transition: none; transform: none; clip-path: none; opacity: 1; scale: 1; }
+    .pf-sq i { animation: none; }
+    .card-frame, .card-frame .mini.color, .pf-media .color { transition: none; }
   }
 </style>
 
@@ -249,6 +464,7 @@
     <span><kbd>Esc</kbd>Back to all</span>
   </footer>
 </main>
+<div class="cursor" id="cursor" aria-hidden="true">Open</div>
 
 <section class="viewer" id="viewer" hidden aria-label="Concept viewer">
   <div class="bar">
@@ -268,10 +484,11 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 3 5 5-5 5"/></svg>
       </button>
     </div>
+    <div class="progress" id="progress"></div>
   </div>
   <div class="stage" id="stage" tabindex="-1">
-    <div class="stage-inner" id="stage-inner">
-      <img id="v-img" alt="">
+    <div class="stage-inner">
+      <div id="v-frame"></div>
       <div class="stage-end">
         <span class="label" id="v-source"></span>
         <button class="btn" id="end-next" type="button"></button>
@@ -281,55 +498,167 @@
 </section>
 
 <script>
-  // Each entry is one Figma frame. Add more here as concepts are exported.
+  // Split text into masked words so each one can slide up on reveal.
+  function words(text, base = 0) {
+    return text.split(" ").map((w, i) =>
+      `<span class="m"><span class="mi" style="--i:${i};--base:${base}ms">${w}</span></span>`).join(" ");
+  }
+
+  // Each entry is one Figma frame, rebuilt as live HTML. Add more here as concepts come in.
   const FRAMES = [
     {
       id: "benefits-and-perks",
       title: "Benefits and Perks",
-      src: "frames/01-benefits-and-perks.jpg",
-      thumb: "frames/01-benefits-and-perks-thumb.jpg",
-      w: 1920, h: 1371,
-      node: "4916:25309"
+      tag: "Careers",
+      node: "4916:25309",
+      render() {
+        const items = [
+          ["Competitive salary and equity", "Top of the market compensation and meaningful equity.", "benefits-salary.jpg", "390/390"],
+          ["Health, Vision and Dental insurance", "Covered for you and your family.", "benefits-health.jpg", "390/562"],
+          ["Visa sponsorship", "We want to hire the best talent in the world.", "benefits-visa.jpg", "390/390"],
+          ["Parental and family benefits", "20 weeks of paid leave, family forming benefits, genetic testing, and more.", "benefits-family.jpg", "390/562"],
+        ];
+        // Squares from the Figma "Particles" layer, in frame pixels.
+        const squares = [
+          [0, 1207, "violet"], [381, 1327, "sky"], [493, 1311, "lilac"], [990, 1295, "sky"],
+          [1099, 1222, "violet"], [1167, 1321, "lilac"], [1347, 1222, "lilac"], [1403, 1310, "lilac"],
+          [1823, 1254, "sky"], [135, 1529, "sky"], [1524, 1577, "lilac"], [1888, 1631, "violet"],
+        ].filter(([, y]) => y < 1371);
+        return `
+          <div class="pf">
+            <nav class="pf-nav fade" style="--base:100ms">
+              <span class="pf-logo">Percepta</span>
+              <div class="pf-tabs">
+                <span class="pf-pill"></span>
+                <span class="pf-tab">Company</span>
+                <span class="pf-tab is-on">Careers</span>
+                <span class="pf-tab">Blog</span>
+              </div>
+            </nav>
+            <div class="pf-hero">
+              <h2 class="pf-h1">${words("Benefits and Perks", 150)}</h2>
+              <p class="pf-intro fade" style="--base:650ms">We’re a startup, but our relationship with General Catalyst means that we enjoy the same benefits and resources typically only available to mature organizations.</p>
+            </div>
+            <div class="pf-grid">
+              ${items.map(([t, d, src, ar], i) => `
+                <article class="pf-item" data-reveal style="--base:${i * 110}ms">
+                  <div class="pf-num"><span>${String(i + 1).padStart(2, "0")}</span><span>→</span></div>
+                  <div class="pf-media" style="aspect-ratio:${ar};--base:${i * 110}ms">
+                    <img class="gray" src="frames/${src}" alt="" draggable="false">
+                    <img class="color" src="frames/${src}" alt="${t}" draggable="false">
+                  </div>
+                  <h3 class="pf-title">${words(t, 350 + i * 110)}</h3>
+                  <p class="pf-desc">${words(d, 500 + i * 110)}</p>
+                </article>`).join("")}
+            </div>
+            ${squares.map(([x, y, c], k) =>
+              `<span class="pf-sq" style="--sx:${x};--sy:${y};--c:var(--${c});--k:${k};--d:${5 + (k % 4) * 1.3}s;--dl:${-k * 0.8}s;--depth:${0.4 + (k % 3) * 0.35}"><i></i></span>`).join("")}
+            <div class="pf-noise"></div>
+          </div>`;
+      },
+      // Interactions that need script: moving nav pill, cursor-origin color reveal, square parallax.
+      mount(root, stage) {
+        const pf = root.querySelector(".pf");
+        const tabs = [...pf.querySelectorAll(".pf-tab")];
+        const pill = pf.querySelector(".pf-pill");
+        const home = pf.querySelector(".pf-tab.is-on");
+        const place = (t) => {
+          pill.style.width = t.offsetWidth + "px";
+          pill.style.transform = `translateX(${t.offsetLeft}px)`;
+        };
+        tabs.forEach((t) => t.addEventListener("mouseenter", () => place(t)));
+        pf.querySelector(".pf-tabs").addEventListener("mouseleave", () => place(home));
+        requestAnimationFrame(() => place(home));
+        new ResizeObserver(() => place(home)).observe(pf);
+
+        pf.querySelectorAll(".pf-item").forEach((it) => {
+          const media = it.querySelector(".pf-media");
+          it.addEventListener("pointerenter", (e) => {
+            const r = media.getBoundingClientRect();
+            media.style.setProperty("--x", ((e.clientX - r.left) / r.width) * 100 + "%");
+            media.style.setProperty("--y", ((e.clientY - r.top) / r.height) * 100 + "%");
+          });
+        });
+
+        const sqs = [...pf.querySelectorAll(".pf-sq")];
+        pf.addEventListener("pointermove", (e) => {
+          const r = pf.getBoundingClientRect();
+          const nx = (e.clientX - r.left) / r.width - 0.5;
+          const ny = (e.clientY - r.top) / r.height - 0.5;
+          sqs.forEach((s) => {
+            const d = +s.style.getPropertyValue("--depth");
+            s.style.setProperty("--mx", (-nx * 60 * d).toFixed(1) + "px");
+            s.style.setProperty("--my", (-ny * 40 * d).toFixed(1) + "px");
+          });
+        });
+        pf.addEventListener("pointerleave", () => sqs.forEach((s) => { s.style.setProperty("--mx", "0px"); s.style.setProperty("--my", "0px"); }));
+
+        // Touch screens have no hover: light up whichever card sits mid-screen.
+        if (matchMedia("(hover: none)").matches) {
+          const lit = new IntersectionObserver((es) => es.forEach((en) => en.target.classList.toggle("is-lit", en.isIntersecting)),
+            { root: stage, rootMargin: "-35% 0px -35% 0px" });
+          pf.querySelectorAll(".pf-item").forEach((it) => lit.observe(it));
+        }
+      }
     }
   ];
 
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, "0");
-  const home = $("home"), viewer = $("viewer"), stage = $("stage");
+  const home = $("home"), viewer = $("viewer"), stage = $("stage"), cursor = $("cursor");
   let current = -1;
+  let revealObs = null;
 
-  // Home wall
+  // ----- Home wall: live miniatures, grey until hovered -----
   $("home-count").textContent = `${pad(FRAMES.length)} ${FRAMES.length === 1 ? "frame" : "frames"}`;
   FRAMES.forEach((f, i) => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <button class="card" type="button" data-i="${i}">
-        <div class="card-frame" style="aspect-ratio:${f.w}/${f.h}">
-          <img src="${f.thumb}" alt="" loading="lazy">
+      <button class="card" type="button" data-i="${i}" aria-label="Open ${f.title}">
+        <div class="card-frame" style="aspect-ratio:1920/1371">
+          <div class="mini gray"><div class="pf-wrap">${f.render()}</div></div>
+          <div class="mini color"><div class="pf-wrap">${f.render()}</div></div>
         </div>
         <div class="card-meta">
-          <span class="card-title">${f.title}</span>
+          <span class="card-title">${f.title} <em>· ${f.tag}</em></span>
           <span class="label">${pad(i + 1)}</span>
         </div>
       </button>`;
     $("wall").appendChild(li);
   });
   const cards = [...document.querySelectorAll(".card")];
-  cards.forEach((c) => c.addEventListener("click", () => go(+c.dataset.i)));
+  const fit = new ResizeObserver((es) => es.forEach((en) =>
+    en.target.style.setProperty("--s", en.contentRect.width / 1920)));
+  cards.forEach((c) => {
+    const frame = c.querySelector(".card-frame");
+    fit.observe(frame);
+    c.addEventListener("click", () => go(+c.dataset.i));
+    c.addEventListener("pointerenter", (e) => {
+      const r = frame.getBoundingClientRect();
+      frame.style.setProperty("--x", ((e.clientX - r.left) / r.width) * 100 + "%");
+      frame.style.setProperty("--y", ((e.clientY - r.top) / r.height) * 100 + "%");
+      cursor.classList.add("on");
+    });
+    c.addEventListener("pointerleave", () => cursor.classList.remove("on"));
+  });
+  addEventListener("pointermove", (e) => {
+    cursor.style.left = e.clientX + "px";
+    cursor.style.top = e.clientY + "px";
+  });
 
-  function go(i) {
-    location.hash = FRAMES[i].id;
-  }
+  // ----- Viewer -----
+  function go(i) { location.hash = FRAMES[i].id; }
 
   function show(i) {
     const f = FRAMES[i];
-    const entering = viewer.hidden;
     current = i;
-    $("v-img").src = f.src;
-    $("v-img").width = f.w;
-    $("v-img").height = f.h;
-    $("v-img").alt = `${f.title} concept`;
-    $("stage-inner").style.setProperty("--frame-w", f.w + 64 + "px");
+    cursor.classList.remove("on");
+    const holder = $("v-frame");
+    holder.innerHTML = `<div class="pf-wrap">${f.render()}</div>`;
+    const pf = holder.querySelector(".pf");
+    pf.classList.add("anim");
+    f.mount?.(holder, stage);
+
     $("v-title").textContent = f.title;
     $("v-count").textContent = `${pad(i + 1)} / ${pad(FRAMES.length)}`;
     $("v-source").textContent = `Figma frame ${f.node}`;
@@ -340,23 +669,29 @@
     document.title = `${f.title} · Percepta Concepts`;
     home.hidden = true;
     viewer.hidden = false;
-    viewer.classList.remove("enter");
-    void viewer.offsetWidth;
-    viewer.classList.add("enter");
-    stage.style.scrollBehavior = "auto";
     stage.scrollTop = 0;
-    stage.style.scrollBehavior = "";
+    progress();
     stage.focus({ preventScroll: true });
-    if (entering) cards[i]?.blur();
+
+    revealObs?.disconnect();
+    revealObs = new IntersectionObserver((es) => es.forEach((en) => {
+      if (en.isIntersecting) { en.target.classList.add("in"); revealObs.unobserve(en.target); }
+    }), { root: stage, threshold: 0.15 });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      pf.classList.add("in");
+      pf.querySelectorAll(".fade, [data-reveal]").forEach((el) => revealObs.observe(el));
+    }));
   }
 
   function showHome() {
     const was = current;
     current = -1;
+    revealObs?.disconnect();
     viewer.hidden = true;
     home.hidden = false;
+    $("v-frame").innerHTML = "";
     document.title = "Percepta Concepts";
-    (cards[was] || cards[0])?.focus({ preventScroll: true });
+    if (was >= 0) cards[was]?.focus({ preventScroll: true });
   }
 
   function route() {
@@ -368,6 +703,12 @@
     if (location.hash) history.pushState(null, "", location.pathname + location.search);
     showHome();
   }
+
+  function progress() {
+    const max = stage.scrollHeight - stage.clientHeight;
+    $("progress").style.setProperty("--p", max > 0 ? stage.scrollTop / max : 1);
+  }
+  stage.addEventListener("scroll", progress, { passive: true });
 
   $("back").addEventListener("click", closeViewer);
   $("prev").addEventListener("click", () => current > 0 && go(current - 1));
@@ -381,8 +722,8 @@
       if (e.key === "ArrowRight" && current < FRAMES.length - 1) { e.preventDefault(); go(current + 1); }
       else if (e.key === "ArrowLeft" && current > 0) { e.preventDefault(); go(current - 1); }
       else if (e.key === "Escape") { e.preventDefault(); closeViewer(); }
-      else if (e.key === " " || e.key === "PageDown" || e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "PageUp") {
-        if (document.activeElement !== stage) stage.focus({ preventScroll: true });
+      else if ([" ", "PageDown", "PageUp", "ArrowDown", "ArrowUp"].includes(e.key) && document.activeElement !== stage) {
+        stage.focus({ preventScroll: true });
       }
       return;
     }
@@ -390,13 +731,12 @@
     if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
       e.preventDefault();
       const step = e.key === "ArrowRight" ? 1 : -1;
-      const n = at < 0 ? 0 : Math.min(cards.length - 1, Math.max(0, at + step));
-      cards[n].focus();
+      cards[at < 0 ? 0 : Math.min(cards.length - 1, Math.max(0, at + step))].focus();
     } else if (e.key === "Enter" && at < 0) {
       go(0);
     }
   });
 
-  window.addEventListener("hashchange", route);
+  addEventListener("hashchange", route);
   route();
 </script>
