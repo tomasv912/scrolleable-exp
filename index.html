@@ -634,6 +634,68 @@
     .nb-wrap { margin-top: 40px; margin-left: calc(var(--nu) * -10); }
   }
 
+  /* ---------- Percepta frame: Life at Percepta (16:9) ---------- */
+  .pf3 { --fh: 1080; --ffull: 1080; --nw: 768; --nh: 432; --nflip: scaleY(-1); --tu: var(--u);
+    padding: calc(var(--u) * 80) max(16px, calc(var(--u) * 48)) calc(var(--u) * 90); }
+  .pf3 .pf-nav { position: absolute; left: calc(var(--u) * 80); top: calc(var(--u) * 80); height: auto; flex-direction: column; align-items: flex-start; gap: calc(var(--u) * 48); z-index: 2; }
+  .lf-logo { display: flex; align-items: center; gap: calc(var(--u) * 12); }
+  .lf-mark { width: max(10px, calc(var(--u) * 12.8)); height: auto; display: block; }
+  .pf3 .pf-tabs { flex-direction: column; align-items: flex-start; gap: max(4px, calc(var(--u) * 14)); margin-left: calc(var(--u) * -10); }
+  .pf3 .pf-tab { color: rgb(39 39 39 / 0.3); }
+  .pf3 .pf-tab:hover, .pf3 .pf-tab.is-on { color: var(--pf-ink); }
+  .lf-strip { position: relative; height: calc(var(--tu) * 195); margin: calc(var(--u) * 344) calc(min(-16px, var(--u) * -48)) 0; z-index: 1; }
+  .lf-tile {
+    position: absolute;
+    left: calc(var(--tu) * var(--x));
+    top: calc(var(--tu) * var(--y));
+    width: calc(var(--tu) * var(--w) + 0.5px);
+    height: calc(var(--tu) * var(--h) + 0.5px);
+    transform-origin: 50% 50%;
+  }
+  .lf-tile img, .lf-pop img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .lf-pop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: calc(var(--tu) * var(--w));
+    height: calc(var(--tu) * var(--h));
+    opacity: 0;
+    pointer-events: none;
+    z-index: 12;
+    will-change: transform, opacity;
+  }
+  .lf-cubes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
+  .lf-h1 {
+    position: relative;
+    margin: calc(var(--u) * 182) 0 0;
+    font-family: var(--calvino);
+    font-weight: 400;
+    font-size: max(48px, calc(var(--u) * 144));
+    line-height: 1;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    z-index: 2;
+  }
+  .lf-desc {
+    position: relative;
+    margin: calc(var(--u) * 48) 0 0;
+    max-width: calc(var(--u) * 1004);
+    font-size: max(15px, calc(var(--u) * 20));
+    line-height: 1;
+    letter-spacing: 0.04em;
+    color: #292a30;
+    z-index: 2;
+  }
+  .lf-desc span { display: block; }
+  @container (max-width: 760px) {
+    .pf3 { --tu: max(var(--u), 0.5px); min-height: 0; padding-bottom: 48px; }
+    .pf3 .pf-nav { left: 16px; top: 24px; }
+    .lf-strip { margin-top: 250px; }
+    .lf-h1 { margin-top: 56px; white-space: normal; }
+    .lf-desc { margin-top: 24px; max-width: 100%; }
+    .lf-desc span { display: inline; }
+  }
+
   /* Narrow screens: same parts, stacked */
   @container (max-width: 760px) {
     .pf { min-height: 0; padding-bottom: 150px; }
@@ -713,6 +775,9 @@
     blur: 16, entryMs: 1300, stagger: 120, sectionDelay: 450, soft: 30,
     pixel: 16, revealMs: 750, pattern: "cursor", jitter: 0.35, band: 0.25,
     grow: 120, growMs: 750, zoom: 1.03,
+    lhZone: 260, lhRadius: 360, lhPush: 110, lhGrow: 0.45, lhChaos: 0.7, lhAttack: 350, lhRelease: 700,
+    liCount: 9, liAppear: "pop", liDur: 520, liStagger: 70, liSpread: 1, liSize: 1, liFollow: 0.12,
+    lcRate: 45, lcSpeed: 170, lcSize: 26, lcLife: 1500, lcSpread: 200, lcFps: 0,
     nbFlipMs: 1300, nbGap: 0.3, nbCurl: 0.7, nbStrips: 14, nbShade: 0.28, nbCast: 0.35, nbPersp: 2600,
     pxFps: 8, pxJitter: 0, pxDrift: 0, pxRadius: 320, pxForce: 1, pxReturn: 0.5, pxSize: 1, pxField: "figma",
   };
@@ -724,6 +789,32 @@
       { k: "sectionDelay", label: "Title → sections", min: 0, max: 1500, step: 25, unit: "ms" },
       { k: "soft", label: "Sweep edge", min: 0, max: 80, step: 5, unit: "%" },
     ]],
+    ["Timeline hover", [
+      { k: "lhZone", label: "Hover zone", min: 0, max: 500, step: 10, unit: "px" },
+      { k: "lhRadius", label: "Radius", min: 80, max: 900, step: 10, unit: "px" },
+      { k: "lhPush", label: "Open up", min: 0, max: 300, step: 5, unit: "px" },
+      { k: "lhGrow", label: "Grow", min: 0, max: 1.5, step: 0.05 },
+      { k: "lhChaos", label: "Chaos", min: 0, max: 2, step: 0.05 },
+      { k: "lhAttack", label: "In time", min: 50, max: 2000, step: 25, unit: "ms" },
+      { k: "lhRelease", label: "Out time", min: 50, max: 2500, step: 25, unit: "ms" },
+    ], ["life"]],
+    ["New images", [
+      { k: "liCount", label: "How many", min: 0, max: 9, step: 1 },
+      { k: "liAppear", label: "Appear as", options: [["pop", "Pop"], ["rise", "Rise from strip"], ["blur", "Blur in"], ["pixel", "Pixels"]] },
+      { k: "liDur", label: "Appear time", min: 100, max: 2000, step: 20, unit: "ms" },
+      { k: "liStagger", label: "Stagger", min: 0, max: 400, step: 10, unit: "ms" },
+      { k: "liSpread", label: "Spread", min: 0.3, max: 2, step: 0.05, unit: "×" },
+      { k: "liSize", label: "Size", min: 0.4, max: 1.8, step: 0.05, unit: "×" },
+      { k: "liFollow", label: "Follow cursor", min: 0.02, max: 0.6, step: 0.01 },
+    ], ["life"]],
+    ["Cubes", [
+      { k: "lcRate", label: "Per second", min: 0, max: 200, step: 5 },
+      { k: "lcSpeed", label: "Speed", min: 20, max: 600, step: 10, unit: "px" },
+      { k: "lcSize", label: "Max size", min: 4, max: 60, step: 1, unit: "px" },
+      { k: "lcLife", label: "Lifetime", min: 300, max: 4000, step: 50, unit: "ms" },
+      { k: "lcSpread", label: "Spread", min: 0, max: 600, step: 10, unit: "px" },
+      { k: "lcFps", label: "Stop motion", min: 0, max: 24, step: 1, unit: " fps" },
+    ], ["life"]],
     ["Notebook", [
       { k: "nbFlipMs", label: "Page turn", min: 300, max: 3000, step: 50, unit: "ms" },
       { k: "nbGap", label: "Riffle gap", min: 0.1, max: 1, step: 0.05 },
@@ -752,7 +843,7 @@
       { k: "pxReturn", label: "Settle back", min: 0.05, max: 1, step: 0.05 },
       { k: "pxSize", label: "Size", min: 0.5, max: 3, step: 0.1, unit: "×" },
       { k: "pxField", label: "Field", options: [["figma", "Figma crop"], ["full", "Whole layer"]] },
-    ]],
+    ], ["benefits-and-perks", "industries"]],
   ];
   const STORE = "percepta-params-v3";
   let CFG = { ...DEFAULTS };
@@ -971,6 +1062,154 @@
     return () => { alive = false; cancelAnimationFrame(raf); };
   }
 
+
+  // ---------- Life at Percepta ----------
+  // Strip portraits, top row and bottom row, in the order Figma repeats them.
+  const LIFE_ROWS = [["life-p1", "life-p2", "life-p3"], ["life-p4", "life-p5", "life-p6"]];
+  // Pictures that open up on hover, laid out around the cursor as in the Figma hover frame:
+  // [file, width, height, x offset, y offset] in frame pixels from the cursor. Add or swap files here.
+  const LIFE_POOL = [
+    ["life-painting", 222, 159, -186, -172],
+    ["life-eye", 145, 179, -96, -297],
+    ["life-window", 196, 153, 12, -228],
+    ["life-couple", 248, 164, -293, -270],
+    ["life-funnel", 136, 136, 133, -284],
+    ["life-pixblue", 151, 151, -148, 22],
+    ["life-sitting", 129, 181, -64, 84],
+    ["life-couple", 248, 164, 28, 35],
+    ["life-waves", 101, 101, 224, 0],
+  ];
+  const LIFE_CUBES = ["#A8A5EC", "#A0C2FF", "#E4DEFC"];
+
+  function mountLife(pf, on, off, stage) {
+    const strip = pf.querySelector(".lf-strip");
+    const tiles = [...strip.querySelectorAll(".lf-tile")].map((el, k) => ({
+      el, x: +el.dataset.x, y: +el.dataset.y, w: +el.dataset.w, h: +el.dataset.h,
+      rx: hash(k, 11) * 2 - 1, ry: hash(k, 13) * 2 - 1, rs: hash(k, 17), cx: 0, cy: 0, cs: 1,
+    }));
+    const pops = [...strip.querySelectorAll(".lf-pop")].map((el, i) => ({
+      el, i, w: +el.dataset.w, h: +el.dataset.h, ox: +el.dataset.ox, oy: +el.dataset.oy,
+      depth: hash(i, 5), x: 0, y: 0, placed: false,
+    }));
+    const canvas = pf.querySelector(".lf-cubes"), ctx = canvas.getContext("2d");
+    let ptr = null, A = 0, T = 0, cur = null, alive = true, last = performance.now(), spawnAcc = 0, cubes = [];
+    on(pf, "pointermove", (e) => { ptr = [e.clientX, e.clientY]; });
+    on(pf, "pointerdown", (e) => { ptr = [e.clientX, e.clientY]; });
+    on(pf, "pointerleave", () => { ptr = null; });
+
+    const easeBack = (t) => { const c = 1.6; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+    const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
+    function loop(now) {
+      if (!alive) return;
+      const dt = Math.min(50, now - last); last = now;
+      const sr = strip.getBoundingClientRect(), fr = pf.getBoundingClientRect();
+      const tu = sr.height / 195;           // strip pixels per Figma pixel
+      // Hover: pointer near the strip (within the zone above and below it).
+      let local = null;
+      if (ptr) {
+        const lx = ptr[0] - sr.left, ly = ptr[1] - sr.top, zone = CFG.lhZone * tu;
+        if (ly > -zone && ly < sr.height + zone && lx > 0 && lx < sr.width) local = [lx, ly];
+      }
+      const target = local ? 1 : 0;
+      const rate = dt / (target ? CFG.lhAttack : CFG.lhRelease);
+      A = target ? Math.min(1, A + rate) : Math.max(0, A - rate);
+      if (local) cur = cur ? [cur[0] + (local[0] - cur[0]) * 0.25, cur[1] + (local[1] - cur[1]) * 0.25] : local;
+
+      // Portraits near the cursor open up: pushed out, scattered and enlarged.
+      if (cur) {
+        const R = CFG.lhRadius * tu, E = easeOut(A);
+        for (const t of tiles) {
+          const cx = (t.x + t.w / 2) * tu, cy = (t.y + t.h / 2) * tu;
+          const dx = cx - cur[0], dy = cy - cur[1], d = Math.hypot(dx, dy) || 1;
+          const f = E * Math.pow(Math.max(0, 1 - d / R), 1.5);
+          const push = CFG.lhPush * tu * f;
+          const tx = (dx / d) * push + t.rx * CFG.lhChaos * push;
+          const ty = (dy / d) * push * 1.4 + t.ry * CFG.lhChaos * push;
+          const ts = 1 + CFG.lhGrow * f * (0.6 + 0.8 * t.rs);
+          const k = 1 - Math.pow(0.82, dt / 16.7);
+          t.cx += (tx - t.cx) * k; t.cy += (ty - t.cy) * k; t.cs += (ts - t.cs) * k;
+          t.el.style.transform = `translate(${t.cx.toFixed(2)}px, ${t.cy.toFixed(2)}px) scale(${t.cs.toFixed(4)})`;
+          t.el.style.zIndex = 1 + Math.round(f * 10);
+        }
+      }
+
+      // New pictures, one after another, each trailing the cursor at its own pace.
+      const count = Math.round(CFG.liCount), dur = CFG.liDur;
+      const tmax = dur + count * CFG.liStagger;
+      T = A > 0 && target ? Math.min(tmax, T + dt) : Math.max(0, T - dt * (CFG.liDur / CFG.lhRelease) * 1.4);
+      pops.forEach((q) => {
+        if (q.i >= count || !cur) { q.el.style.opacity = 0; return; }
+        const p = Math.min(1, Math.max(0, (T - q.i * CFG.liStagger) / dur));
+        if (p <= 0) { q.el.style.opacity = 0; q.placed = false; return; }
+        const tx = cur[0] + q.ox * CFG.liSpread * tu - (q.w * CFG.liSize * tu) / 2 + (q.w * tu) / 2;
+        const ty = cur[1] + q.oy * CFG.liSpread * tu;
+        if (!q.placed) { q.x = tx; q.y = ty; q.placed = true; }
+        const k = 1 - Math.pow(1 - CFG.liFollow * (0.5 + q.depth), dt / 16.7);
+        q.x += (tx - q.x) * k; q.y += (ty - q.y) * k;
+        const mode = CFG.liAppear;
+        let x = q.x, y = q.y, sc = CFG.liSize, op = 1, filter = "none", clip = "none";
+        if (mode === "pop") { sc *= 0.55 + 0.45 * easeBack(p); op = Math.min(1, p * 2); }
+        else if (mode === "rise") {
+          const e = easeOut(p);
+          x = cur[0] + (q.x - cur[0]) * e; y = sr.height / 2 + (q.y - sr.height / 2) * e;
+          sc *= 0.3 + 0.7 * e; op = Math.min(1, p * 3);
+        } else if (mode === "blur") { op = easeOut(p); filter = `blur(${((1 - p) * 14).toFixed(1)}px)`; sc *= 0.96 + 0.04 * p; }
+        else if (mode === "pixel") {
+          if (p < 1) {
+            const cs = 14, cols = Math.ceil(q.w / cs), rows = Math.ceil(q.h / cs), pxs = (q.w * tu) / q.w;
+            let d = "";
+            for (let rr = 0; rr < rows; rr++) for (let c = 0; c < cols; c++)
+              if (hash(c + q.i * 31, rr) < p) d += `M${(c * cs * pxs).toFixed(1)} ${(rr * cs * pxs).toFixed(1)}h${(cs * pxs).toFixed(1)}v${(cs * pxs).toFixed(1)}h-${(cs * pxs).toFixed(1)}z`;
+            clip = d ? `path("${d}")` : "inset(50%)";
+          }
+        }
+        q.el.style.opacity = op.toFixed(3);
+        q.el.style.filter = filter;
+        q.el.style.clipPath = clip;
+        q.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${sc.toFixed(4)})`;
+        q.el.style.transformOrigin = "0 0";
+      });
+
+      // Cubes: born on the strip under the cursor, flying outward and growing as they go.
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      if (canvas.width !== Math.round(fr.width * dpr) || canvas.height !== Math.round(fr.height * dpr)) {
+        canvas.width = Math.round(fr.width * dpr); canvas.height = Math.round(fr.height * dpr);
+      }
+      const offY = sr.top - fr.top, offX = sr.left - fr.left;
+      if (cur && A > 0.15 && target && !reduced) {
+        spawnAcc += (CFG.lcRate * A * dt) / 1000;
+        while (spawnAcc >= 1) {
+          spawnAcc--;
+          const top = Math.random() < 0.5;
+          const ang = (top ? -Math.PI / 2 : Math.PI / 2) + (Math.random() - 0.5) * 1.3;
+          cubes.push({
+            x: cur[0] + (Math.random() - 0.5) * 2 * CFG.lcSpread * tu, y: top ? 0 : sr.height,
+            vx: Math.cos(ang), vy: Math.sin(ang), born: now, life: CFG.lcLife * (0.6 + Math.random() * 0.8),
+            size: CFG.lcSize * (0.25 + Math.random() * 0.75), c: LIFE_CUBES[(Math.random() * 3) | 0], sp: 0.5 + Math.random(),
+          });
+        }
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, fr.width, fr.height);
+      cubes = cubes.filter((c) => {
+        let age = now - c.born;
+        if (age > c.life) return false;
+        if (CFG.lcFps > 0) age = Math.floor((age / 1000) * CFG.lcFps) / CFG.lcFps * 1000;
+        const t = age / c.life, dist = (CFG.lcSpeed * tu * c.sp * age) / 1000;
+        const s = Math.max(2, (0.2 + 0.8 * easeOut(Math.min(1, t * 1.6))) * c.size * tu);
+        ctx.globalAlpha = t > 0.6 ? 1 - (t - 0.6) / 0.4 : 1;
+        ctx.fillStyle = c.c;
+        ctx.fillRect(Math.round(offX + c.x + c.vx * dist - s / 2), Math.round(offY + c.y + c.vy * dist - s / 2), Math.round(s), Math.round(s));
+        return true;
+      });
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+    off.push(() => { alive = false; });
+  }
+
   // ---------- Shared frame parts ----------
   const NAV = `
     <nav class="pf-nav" data-rv="title">
@@ -990,7 +1229,11 @@
     const tabs = [...pf.querySelectorAll(".pf-tab")];
     const pill = pf.querySelector(".pf-pill");
     const homeTab = pf.querySelector(".pf-tab.is-on");
-    const place = (t) => { pill.style.width = t.offsetWidth + "px"; pill.style.transform = `translateX(${t.offsetLeft}px)`; };
+    const place = (t) => {
+      pill.style.width = t.offsetWidth + "px";
+      pill.style.height = t.offsetHeight + "px";
+      pill.style.transform = `translate(${t.offsetLeft}px, ${t.offsetTop}px)`;
+    };
     tabs.forEach((t) => on(t, "mouseenter", () => place(t)));
     on(pf.querySelector(".pf-tabs"), "mouseleave", () => place(homeTab));
     requestAnimationFrame(() => place(homeTab));
@@ -1195,6 +1438,52 @@
         return () => off.forEach((f) => f());
       },
     },
+    {
+      id: "life",
+      title: "Life at Percepta",
+      tag: "Careers",
+      node: "4977:421",
+      w: 1920, h: 1080,
+      render() {
+        const MARK = `<svg class="lf-mark" viewBox="0 0 12.8 16" aria-hidden="true"><path fill="#272727" d="M3.2002 16H0V12.7998H3.2002V16ZM12.8008 12.7998H3.2002V9.59961H9.60059V3.2002H12.8008V12.7998ZM3.2002 9.59961H0V6.40039H3.2002V9.59961ZM9.60059 3.2002H0V0H9.60059V3.2002Z"/></svg>`;
+        const tiles = [];
+        for (let i = 0; i < 21; i++) {
+          const x = -15 + Math.round(i * 97.333), w = Math.round((i + 1) * 97.333) - Math.round(i * 97.333);
+          LIFE_ROWS.forEach((row, r) => {
+            const y = r ? 97 : 0, h = r ? 98 : 97;
+            tiles.push(`<div class="lf-tile" data-x="${x}" data-y="${y}" data-w="${w}" data-h="${h}" style="--x:${x};--y:${y};--w:${w};--h:${h}"><img src="frames/${row[i % 3]}.webp" alt="" draggable="false"></div>`);
+          });
+        }
+        const pops = LIFE_POOL.map(([f, w, h, ox, oy]) =>
+          `<div class="lf-pop" data-w="${w}" data-h="${h}" data-ox="${ox}" data-oy="${oy}" style="--w:${w};--h:${h}"><img src="frames/${f}.webp" alt="" draggable="false"></div>`).join("");
+        return `
+          <div class="pf pf3">
+            <nav class="pf-nav" data-rv="title">
+              <div class="lf-logo">${MARK}${LOGO}</div>
+              <div class="pf-tabs">
+                <span class="pf-pill"></span>
+                <span class="pf-tab">Company</span>
+                <span class="pf-tab is-on">Careers</span>
+                <span class="pf-tab">Blog</span>
+              </div>
+            </nav>
+            <div class="lf-strip" data-rv="section">${tiles.join("")}${pops}</div>
+            <h2 class="lf-h1" data-rv="title">Life at Percepta</h2>
+            <p class="lf-desc" data-rv="section"><span>Percepta takes AI out of the labs and into the industries that need it most. </span><span>We’re hiring mission-driven builders who want their work to matter.</span></p>
+            <canvas class="lf-cubes" aria-hidden="true"></canvas>
+            <div class="pf-noise"></div>
+          </div>`;
+      },
+      mount(root, stage) {
+        const pf = root.querySelector(".pf");
+        const off = [];
+        const on = (el, ev, fn, o) => { el.addEventListener(ev, fn, o); off.push(() => el.removeEventListener(ev, fn, o)); };
+        mountNav(pf, on, off);
+        mountLife(pf, on, off, stage);
+        return () => off.forEach((f) => f());
+      },
+    },
+
   ];
 
   // ---------- Entrance: title first, then sections; each goes blur → sharp, swept left to right ----------
