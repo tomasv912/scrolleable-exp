@@ -482,6 +482,9 @@
   }
   .nb-shadow i:first-child { left: 0; }
   .nb-shadow i:last-child { left: calc(var(--nu) * 514); }
+  .nb-cover { position: absolute; top: 0; transform: translateZ(0); }
+  .nb-cover.l { left: 0; }
+  .nb-cover.r { left: calc(var(--nu) * 514); }
   .nb-book {
     position: absolute;
     inset: 0;
@@ -592,11 +595,14 @@
     background: #272727;
     box-shadow: inset 0 calc(var(--nu) * 2) calc(var(--nu) * 2) rgb(0 0 0 / 0.5);
   }
-  .nb-tabs { position: absolute; left: calc(var(--nu) * 988); top: 0; width: calc(var(--nu) * 40); height: 100%; z-index: 2; }
+  /* Each tab hangs off its own sheet's outer edge and turns with it (front face right, back face left). */
+  .nb-tabw { position: absolute; left: 100%; width: calc(var(--nu) * 35); transform-style: preserve-3d; }
   .nb-tab {
     position: absolute;
-    left: 0;
-    width: calc(var(--nu) * 35);
+    inset: 0;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    pointer-events: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -616,7 +622,8 @@
     transition: background-color 0.35s, filter 0.35s;
   }
   .nb-tab:hover { filter: drop-shadow(calc(var(--nu) * 2) calc(var(--nu) * 1) calc(var(--nu) * 2) rgb(0 0 0 / 0.15)) brightness(0.94); }
-  .nb-tab.is-on { background: #272727; z-index: 10; }
+  .nb-tab.back { transform: rotateY(180deg); }
+  .nb-tabw.is-on .nb-tab { background: #272727; }
   .nb-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @container (max-width: 760px) {
     .pf2 { --nu: calc((100cqw - 32px) / 1023); }
@@ -866,18 +873,18 @@
     return `translate3d(calc(var(--nu) * ${(out * r * 1.4).toFixed(2)}), calc(var(--nu) * ${(r * 0.9).toFixed(2)}), ${(3 - r * 0.6 + dz).toFixed(2)}px) rotateY(${side ? -180 : 0}deg)`;
   }
 
-  // Sheets turn over the rings, right to left, always forward: picking an earlier tab goes on round the
-  // notebook. Every sheet is the same page for now, so the stacks just recycle: as one sheet lifts off the
-  // right stack, the bottom sheet of the left stack slips under the right one, out of sight.
+  // One sheet per tab, like the dividers of a ring binder: the tab belongs to the sheet and turns with it.
+  // Picking a tab turns sheets until that tab's sheet is on top of the right stack: forward (right to left)
+  // for a later tab, back (left to right) for an earlier one, so after Healthcare the binder goes back to the start.
   function mountNotebook(pf, on) {
     const wrap = pf.querySelector(".nb-wrap");
     const sheets = [...wrap.querySelectorAll(".nb-sheet")].map((el) => ({
       el, strips: [...el.querySelectorAll(".nb-strip")], shades: [...el.querySelectorAll(".nb-face > i")],
+      tab: el.querySelector(".nb-tabw"),
     }));
-    const tabs = [...wrap.querySelectorAll(".nb-tab")];
     const castR = wrap.querySelector(".nb-cast.r"), castL = wrap.querySelector(".nb-cast.l");
-    let right = sheets.slice(0, 4), left = sheets.slice(4);
-    let air = [], queue = 0, lastStart = -1e9, active = 0, target = 0, alive = true, raf = 0;
+    let right = sheets.slice(), left = [];
+    let air = [], moves = [], lastStart = -1e9, lastDir = 1, pos = 0, alive = true, raf = 0;
     const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
     const placeRest = () => {
@@ -889,24 +896,27 @@
       s.shades.forEach((sh) => { sh.style.opacity = 0; });
     };
 
-    function startFlip(now) {
-      const s = right.shift();
-      const under = left.pop();
-      flatten(under);
-      right.push(under);
-      air.push({ s, t0: now, n: air.length });
+    function startMove(now) {
+      const dir = moves[0];
+      // Change of direction waits for the sheets in the air to land.
+      if (dir !== lastDir && air.length) return;
+      const from = dir > 0 ? right : left;
+      if (!from.length) return;
+      moves.shift();
+      air.push({ s: from.shift(), dir, t0: now });
       lastStart = now;
-      queue--;
-      active = (active + 1) % TABS.length;
+      lastDir = dir;
     }
 
     function frame(now) {
       if (!alive) return;
       const dur = reduced ? 1 : CFG.nbFlipMs;
-      if (queue > 0 && now - lastStart >= dur * CFG.nbGap) startFlip(now);
+      if (moves.length && now - lastStart >= dur * CFG.nbGap) startMove(now);
       let castRo = 0, castLo = 0, castRw = 0, castLw = 0;
       air = air.filter((a, idx) => {
-        const t = Math.min(1, (now - a.t0) / dur), e = ease(t);
+        const tt = Math.min(1, (now - a.t0) / dur);
+        // A turn back is the forward turn played in reverse.
+        const t = a.dir > 0 ? tt : 1 - tt, e = ease(t);
         const theta = 180 * e;
         const S = a.s.strips.length;
         // Bend: early on the free edge leads (the corner lifts first), late it trails behind the spine.
@@ -926,7 +936,7 @@
         const rad = (theta * Math.PI) / 180;
         if (theta < 90) { castRo = Math.max(castRo, Math.sin(rad)); castRw = Math.max(castRw, Math.cos(rad)); }
         else { castLo = Math.max(castLo, Math.sin(rad)); castLw = Math.max(castLw, -Math.cos(rad)); }
-        if (t >= 1) { flatten(a.s); left.unshift(a.s); return false; }
+        if (tt >= 1) { flatten(a.s); (a.dir > 0 ? left : right).unshift(a.s); return false; }
         return true;
       });
       castR.style.opacity = (castRo * CFG.nbCast).toFixed(3);
@@ -934,20 +944,24 @@
       castL.style.opacity = (castLo * CFG.nbCast).toFixed(3);
       castL.style.setProperty("--w", (20 + castLw * 70).toFixed(1) + "%");
       placeRest();
-      raf = air.length || queue > 0 ? requestAnimationFrame(frame) : 0;
+      raf = air.length || moves.length ? requestAnimationFrame(frame) : 0;
     }
 
     const select = (i) => {
-      if (i === target) return;
-      queue += (i - target + TABS.length) % TABS.length;
-      target = i;
-      tabs.forEach((t, j) => t.classList.toggle("is-on", j === i));
+      if (i === pos) return;
+      const dir = i > pos ? 1 : -1;
+      for (let n = Math.abs(i - pos); n > 0; n--) moves.push(dir);
+      pos = i;
+      sheets.forEach((s, j) => s.tab.classList.toggle("is-on", j === i));
       if (!raf) raf = requestAnimationFrame(frame);
     };
-    tabs.forEach((t, i) => {
-      t.setAttribute("role", "button");
-      t.tabIndex = 0;
-      t.setAttribute("aria-label", `Show ${TABS[i][0]}`);
+    wrap.querySelectorAll(".nb-tab").forEach((t) => {
+      const i = +t.dataset.tab;
+      if (t.classList.contains("front")) {
+        t.setAttribute("role", "button");
+        t.tabIndex = 0;
+        t.setAttribute("aria-label", `Show ${TABS[i][0]}`);
+      }
       on(t, "click", () => select(i));
       on(t, "keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(i); } });
     });
@@ -1128,7 +1142,10 @@
           </div>`;
         // A sheet is a chain of vertical strips, each hinged on the one before it, so the paper can bend.
         const sheet = (i) => {
-          let inner = "";
+          const [label, top, h, c] = TABS[i];
+          let inner = `<div class="nb-tabw${i === 0 ? " is-on" : ""}" style="top:calc(var(--nu) * ${top});height:calc(var(--nu) * ${h});--tc:${c}">
+              <span class="nb-tab front" data-tab="${i}">${label}</span><span class="nb-tab back" data-tab="${i}" aria-hidden="true">${label}</span>
+            </div>`;
           for (let k = S - 1; k >= 0; k--) {
             const w = 474 / S;
             inner = `<div class="nb-strip s${k}">
@@ -1137,9 +1154,8 @@
                 ${inner}
               </div>`;
           }
-          const [side, r] = i < 4 ? [0, i] : [1, i - 4];
           return `<div class="nb-sheet" data-i="${i}" style="--S:${S}">${inner.replace('class="nb-strip s0"',
-            `class="nb-strip s0" style="transform:${restTransform(side, r)}"`)}</div>`;
+            `class="nb-strip s0" style="transform:${restTransform(0, i)}"`)}</div>`;
         };
         // Wire loops: radius 30 around the axis, 10 segments each, two wires per ring like the Figma drawing.
         const R = 30, SEG = 10, chord = 2 * R * Math.sin(Math.PI / SEG / 2);
@@ -1156,12 +1172,12 @@
             <div class="nb-wrap" data-rv="section">
               <div class="nb-shadow"><i></i><i></i></div>
               <div class="nb-book" style="--persp:${CFG.nbPersp}">
-                ${Array.from({ length: 8 }, (_, i) => sheet(i)).join("")}
+                <div class="nb-cover l">${back}</div>
+                <div class="nb-cover r"><div class="nb-page" style="box-shadow:none"></div></div>
+                ${TABS.map((_, i) => sheet(i)).join("")}
                 <div class="nb-cast r"></div><div class="nb-cast l"></div>
                 ${wires}
               </div>
-              <div class="nb-tabs">${TABS.map(([label, top, h, c], i) =>
-                `<span class="nb-tab${i === 0 ? " is-on" : ""}" data-tab="${i}" style="top:calc(var(--nu) * ${top});height:calc(var(--nu) * ${h});--tc:${c};z-index:${4 - i}">${label}</span>`).join("")}</div>
             </div>
             ${squaresHTML(SQUARES2)}
             <div class="pf-noise"></div>
