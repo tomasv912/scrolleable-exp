@@ -1061,14 +1061,19 @@
   // ---------- Life at Percepta ----------
   // Strip portraits, top row and bottom row, in the order Figma repeats them.
   const LIFE_ROWS = [["life-p1", "life-p2", "life-p3"], ["life-p4", "life-p5", "life-p6"]];
-  // What opens out of the timeline as the cursor travels along it: the Figma pictures, then plain colour
-  // plates to fill in until there are more photos. [file or colour, width, height] in frame pixels.
+  // What opens out of the timeline: the team's photos ("p") and Percepta graphics ("g"), taking turns.
+  // [file in frames/, width, height in frame pixels, kind]. Add or swap files here.
   const LIFE_POOL = [
-    ["life-painting", 222, 159], ["#A8A5EC", 150, 150], ["life-eye", 145, 179], ["#272727", 120, 160],
-    ["life-window", 196, 153], ["#E4DEFC", 210, 150], ["life-couple", 248, 164], ["#A0C2FF", 130, 130],
-    ["life-funnel", 136, 136], ["#D9D4CB", 180, 230], ["life-pixblue", 151, 151], ["#C6C3F2", 240, 160],
-    ["life-sitting", 129, 181], ["#8FB0FF", 160, 120], ["life-waves", 101, 101], ["#EDEAE4", 150, 200],
-    ["#B9B6EE", 200, 140], ["#5F6CFF", 110, 110], ["#F2D9C6", 170, 220], ["#A8A5EC", 230, 150],
+    ["timeline/p01.webp", 153, 230, "p"], ["timeline/p02.webp", 230, 153, "p"], ["timeline/p03.webp", 230, 230, "p"], ["timeline/p04.webp", 230, 230, "p"],
+    ["timeline/p05.webp", 230, 230, "p"], ["timeline/p06.webp", 230, 230, "p"], ["timeline/p07.webp", 188, 230, "p"], ["timeline/p08.webp", 153, 230, "p"],
+    ["timeline/p09.webp", 173, 230, "p"], ["timeline/p10.webp", 230, 153, "p"], ["timeline/p11.webp", 153, 230, "p"], ["timeline/p12.webp", 173, 230, "p"],
+    ["timeline/p13.webp", 230, 187, "p"], ["timeline/p14.webp", 184, 230, "p"], ["timeline/p15.webp", 230, 173, "p"], ["timeline/p16.webp", 230, 230, "p"],
+    ["timeline/p17.webp", 173, 230, "p"], ["timeline/p18.webp", 230, 153, "p"], ["timeline/p19.webp", 230, 153, "p"], ["timeline/p20.webp", 230, 128, "p"],
+    ["timeline/p21.webp", 230, 153, "p"], ["timeline/p22.webp", 230, 153, "p"], ["timeline/g01.svg", 165, 165, "g"], ["timeline/g02.svg", 165, 165, "g"],
+    ["timeline/g03.svg", 165, 165, "g"], ["timeline/g04.svg", 250, 64, "g"], ["timeline/g05.svg", 165, 165, "g"], ["timeline/g06.webp", 165, 165, "g"],
+    ["timeline/g07.webp", 165, 165, "g"], ["timeline/g08.svg", 165, 165, "g"], ["timeline/g09.svg", 165, 165, "g"], ["timeline/g10.svg", 165, 165, "g"],
+    ["timeline/g11.svg", 165, 165, "g"], ["timeline/g12.webp", 165, 165, "g"], ["timeline/g13.webp", 165, 165, "g"], ["timeline/g14.webp", 165, 165, "g"],
+    ["timeline/g15.svg", 165, 165, "g"],
   ];
   const LIFE_CUBES = ["#A8A5EC", "#A0C2FF", "#E4DEFC"];
 
@@ -1093,7 +1098,7 @@
     function build() {
       layer.innerHTML = "";
       const per = Math.max(1, Math.round(CFG.liDensity)), n = 21 * per;
-      const photos = LIFE_POOL.filter(([src]) => !src.startsWith("#")), plates = LIFE_POOL.filter(([src]) => src.startsWith("#"));
+      const photos = LIFE_POOL.filter((e) => e[3] !== "g"), plates = LIFE_POOL.filter((e) => e[3] === "g");
       items = Array.from({ length: n }, (_, i) => {
         const list = i % 2 === 0 || !plates.length ? photos : plates;
         const [src, bw, bh] = list[Math.floor(hash(i, 41) * list.length)];
@@ -1102,7 +1107,7 @@
         el.className = "lf-pop";
         el.style.width = bw * sz + "px";
         el.style.height = bh * sz + "px";
-        el.innerHTML = `<div class="lf-in">${src.startsWith("#") ? `<span style="background:${src}"></span>` : `<img src="frames/${src}.webp" alt="" draggable="false">`}</div>`;
+        el.innerHTML = `<div class="lf-in">${src.startsWith("#") ? `<span style="background:${src}"></span>` : `<img src="frames/${src}" alt="" draggable="false" decoding="async">`}</div>`;
         // Fixed pixels around the picture, part of it: they never animate on their own.
         for (let j = 0; j < Math.round(CFG.lpCount); j++) {
           const q = document.createElement("i");
