@@ -623,7 +623,6 @@
   }
   .nb-tab:hover { filter: drop-shadow(calc(var(--nu) * 2) calc(var(--nu) * 1) calc(var(--nu) * 2) rgb(0 0 0 / 0.15)) brightness(0.94); }
   .nb-tab.back { transform: rotateY(180deg); }
-  .nb-tabw.is-on .nb-tab { background: #272727; }
   .nb-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @container (max-width: 760px) {
     .pf2 { --nu: calc((100cqw - 32px) / 1023); }
@@ -712,7 +711,7 @@
     pixel: 16, revealMs: 750, pattern: "cursor", jitter: 0.35, band: 0.25,
     grow: 120, growMs: 750, zoom: 1.03,
     nbFlipMs: 1300, nbGap: 0.3, nbCurl: 0.7, nbStrips: 14, nbShade: 0.28, nbCast: 0.35, nbPersp: 2600,
-    pxFps: 8, pxJitter: 0.5, pxDrift: 0.4, pxRadius: 320, pxForce: 1, pxReturn: 0.5, pxSize: 1, pxField: "figma",
+    pxFps: 8, pxJitter: 0, pxDrift: 0, pxRadius: 320, pxForce: 1, pxReturn: 0.5, pxSize: 1, pxField: "figma",
   };
   const SCHEMA = [
     ["Entrance", [
@@ -752,7 +751,7 @@
       { k: "pxField", label: "Field", options: [["figma", "Figma crop"], ["full", "Whole layer"]] },
     ]],
   ];
-  const STORE = "percepta-params-v2";
+  const STORE = "percepta-params-v3";
   let CFG = { ...DEFAULTS };
   try { Object.assign(CFG, JSON.parse(localStorage.getItem(STORE) || "{}")); } catch (e) {}
   const saveCfg = () => { try { localStorage.setItem(STORE, JSON.stringify(CFG)); } catch (e) {} };
@@ -856,9 +855,9 @@
 
 
   // ---------- Notebook ----------
-  // Index tabs from the Figma frame: label, top, height (notebook px), colour when not selected.
+  // Index tabs from the Figma frame: label, top, height (notebook px), colour.
   const TABS = [
-    ["Governments", 0, 124, "#C3C0F2"],
+    ["Governments", 0, 124, "#272727"],
     ["Finance", 105, 84, "#E4DEFC"],
     ["Supply Chain", 172, 124, "#A8A5EC"],
     ["Healthcare", 281, 105, "#A0C2FF"],
