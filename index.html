@@ -654,32 +654,9 @@
   }
   .lf-tile img, .lf-pop img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .lf-layer { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
-  .lf-pop { position: absolute; left: 0; top: 0; }
+  .lf-pop { position: absolute; left: 0; top: 0; transform-origin: 0 0; visibility: hidden; will-change: transform; }
   .lf-in { position: absolute; inset: 0; overflow: hidden; }
   .lf-in > span { display: block; width: 100%; height: 100%; }
-  .lf-px { left: 0; top: 0; }
-  .lf-scrub {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 1px;
-    background: var(--pf-ink);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 30;
-    transition: opacity 0.25s;
-  }
-  .lf-scrub span {
-    position: absolute;
-    bottom: calc(var(--u) * 40);
-    left: calc(var(--u) * 10);
-    font-size: max(11px, calc(var(--u) * 14));
-    letter-spacing: 0.04em;
-    color: var(--pf-ink);
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
   .lf-cover { position: absolute; inset: 0; }
   .lf-cover i { position: absolute; background: var(--pf-bg); }
   .lf-px { position: absolute; display: block; }
@@ -794,8 +771,7 @@
     pixel: 16, revealMs: 750, pattern: "cursor", jitter: 0.35, band: 0.25,
     grow: 120, growMs: 750, zoom: 1.03,
     lhZone: 260, lhRadius: 360, lhPush: 110, lhGrow: 0.45, lhChaos: 0.7, lhAttack: 350, lhRelease: 700,
-    lsCols: 3, lsLine: true,
-    liPer: 8, liAppear: "cut", liDur: 160, liStagger: 35, liOut: 0, liFollow: 0.08, liSpread: 210, liLift: 190, liSizeMin: 0.7, liSizeMax: 1.25,
+    liDensity: 3, liReach: 460, liCurve: 1.8, liSpread: 0.35, liLift: 210, liJitter: 30, liGlide: 0.14, liSizeMin: 0.95, liSizeMax: 1.7,
     lpCount: 2, lpMin: 6, lpMax: 26, lpGap: 10,
     nbFlipMs: 1300, nbGap: 0.3, nbCurl: 0.7, nbStrips: 14, nbShade: 0.28, nbCast: 0.35, nbPersp: 2600,
     pxFps: 8, pxJitter: 0, pxDrift: 0, pxRadius: 320, pxForce: 1, pxReturn: 0.5, pxSize: 1, pxField: "figma",
@@ -817,19 +793,14 @@
       { k: "lhAttack", label: "In time", min: 50, max: 2000, step: 25, unit: "ms" },
       { k: "lhRelease", label: "Out time", min: 50, max: 2500, step: 25, unit: "ms" },
     ], ["life"]],
-    ["Timeline groups", [
-      { k: "lsCols", label: "Columns per group", min: 1, max: 7, step: 1 },
-      { k: "lsLine", label: "Cursor line", toggle: true },
-    ], ["life"]],
     ["New images", [
-      { k: "liPer", label: "Per group", min: 1, max: 16, step: 1 },
-      { k: "liAppear", label: "Appear as", options: [["cut", "Cut"], ["pop", "Pop"], ["rise", "Rise from strip"], ["blur", "Blur in"], ["pixel", "Pixels"]] },
-      { k: "liDur", label: "Appear time", min: 1, max: 1200, step: 10, unit: "ms" },
-      { k: "liStagger", label: "Stagger", min: 0, max: 200, step: 5, unit: "ms" },
-      { k: "liOut", label: "Swap out", min: 0, max: 800, step: 10, unit: "ms" },
-      { k: "liFollow", label: "Follow cursor", min: 0, max: 0.5, step: 0.01 },
-      { k: "liSpread", label: "Width", min: 0, max: 500, step: 5, unit: "px" },
-      { k: "liLift", label: "Height", min: 0, max: 400, step: 5, unit: "px" },
+      { k: "liDensity", label: "Per column", min: 1, max: 4, step: 1 },
+      { k: "liReach", label: "Reach", min: 100, max: 1000, step: 10, unit: "px" },
+      { k: "liCurve", label: "Falloff", min: 0.5, max: 4, step: 0.1 },
+      { k: "liSpread", label: "Spread", min: 0, max: 2, step: 0.05 },
+      { k: "liLift", label: "Off the line", min: 0, max: 400, step: 5, unit: "px" },
+      { k: "liJitter", label: "Scatter", min: 0, max: 200, step: 5, unit: "px" },
+      { k: "liGlide", label: "Glide", min: 0.02, max: 1, step: 0.01 },
       { k: "liSizeMin", label: "Size min", min: 0.3, max: 1.5, step: 0.05, unit: "×" },
       { k: "liSizeMax", label: "Size max", min: 0.3, max: 2, step: 0.05, unit: "×" },
     ], ["life"]],
@@ -869,7 +840,7 @@
       { k: "pxField", label: "Field", options: [["figma", "Figma crop"], ["full", "Whole layer"]] },
     ], ["benefits-and-perks", "industries"]],
   ];
-  const STORE = "percepta-params-v5";
+  const STORE = "percepta-params-v6";
   let CFG = { ...DEFAULTS };
   try { Object.assign(CFG, JSON.parse(localStorage.getItem(STORE) || "{}")); } catch (e) {}
   const saveCfg = () => { try { localStorage.setItem(STORE, JSON.stringify(CFG)); } catch (e) {} };
@@ -1101,112 +1072,66 @@
   ];
   const LIFE_CUBES = ["#A8A5EC", "#A0C2FF", "#E4DEFC"];
 
-  // Hovering the strip works like a scrubber: the timeline is cut into groups of columns, and the group under
-  // the cursor opens its own collage around a vertical line that follows the cursor. Crossing into the next
-  // group cuts to a different collage (other pictures, other layout); within a group the collage trails the
-  // cursor, each picture at its own pace. Portraits near the cursor open up; each picture brings fixed pixels.
+  // Hovering the strip works like a magnifier sliding along the timeline: every picture belongs to a point
+  // on the strip. As the cursor nears that point the picture grows out of the line, spreads outward and comes
+  // to the front; as the cursor moves on it shrinks back into the line. So compositions flow into each other
+  // as you travel. Portraits near the cursor open up; each picture carries fixed pixels.
   function mountLife(pf, on, off, stage) {
     const strip = pf.querySelector(".lf-strip");
     const layer = pf.querySelector(".lf-layer");
-    const scrub = pf.querySelector(".lf-scrub"), scrubLabel = scrub.querySelector("span");
     const tiles = [...strip.querySelectorAll(".lf-tile")].map((el, k) => ({
       el, x: +el.dataset.x, y: +el.dataset.y, w: +el.dataset.w, h: +el.dataset.h,
       rx: hash(k, 11) * 2 - 1, ry: hash(k, 13) * 2 - 1, rs: hash(k, 17), cx: 0, cy: 0, cs: 1,
     }));
-    let ptr = null, A = 0, cur = null, seg = -1, comp = [], z = 1, alive = true, last = performance.now();
+    let ptr = null, A = 0, cur = null, alive = true, last = performance.now(), items = [], key = "";
     on(pf, "pointermove", (e) => { ptr = [e.clientX, e.clientY]; });
     on(pf, "pointerdown", (e) => { ptr = [e.clientX, e.clientY]; });
     on(pf, "pointerleave", () => { ptr = null; });
-
     const easeOut = (t) => 1 - Math.pow(1 - t, 3);
-    const OUT = "cubic-bezier(.16,1,.3,1)";
-    const groups = () => Math.ceil(21 / Math.max(1, Math.round(CFG.lsCols)));
 
-    function appear(el, delay, rise) {
-      const d = reduced ? 1 : CFG.liDur, mode = CFG.liAppear;
-      if (mode === "cut" || d <= 1) {
-        el.style.visibility = "hidden";
-        setTimeout(() => { el.style.visibility = ""; }, delay);
-        return;
-      }
-      if (mode === "pixel") {
-        const n = 6, cover = document.createElement("div");
-        cover.className = "lf-cover";
-        for (let i = 0; i < n * n; i++) {
-          const c = document.createElement("i");
-          c.style.cssText = `left:${(i % n) * 100 / n}%;top:${Math.floor(i / n) * 100 / n}%;width:${100 / n + 0.5}%;height:${100 / n + 0.5}%`;
-          c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1, delay: delay + Math.random() * d, fill: "both" });
-          cover.appendChild(c);
-        }
-        el.appendChild(cover);
-        setTimeout(() => cover.remove(), delay + d + 50);
-        return;
-      }
-      const frames = mode === "rise"
-        ? [{ transform: `translate(0, ${rise}px) scale(0.3)`, opacity: 0 }, { transform: "none", opacity: 1 }]
-        : mode === "blur"
-          ? [{ filter: "blur(14px)", opacity: 0 }, { filter: "blur(0px)", opacity: 1 }]
-          : [{ transform: "scale(0.6)", opacity: 0 }, { transform: "scale(1.03)", opacity: 1, offset: 0.7 }, { transform: "none", opacity: 1 }];
-      el.firstElementChild.animate(frames, { duration: d, delay, easing: mode === "pop" ? "ease-out" : OUT, fill: "backwards" });
-    }
-
-    function clear(fast) {
-      const out = fast ? 0 : CFG.liOut;
-      comp.forEach((it) => {
-        it.px.forEach((q) => q.remove());
-        if (out <= 1 || reduced) { it.el.remove(); return; }
-        const a = it.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: out, easing: "ease-in", fill: "forwards" });
-        a.onfinish = () => it.el.remove();
-      });
-      comp = [];
-    }
-
-    // The collage for one group: its own pick of pictures and its own layout, the same every visit.
-    function build(g, tu, sr) {
-      clear(false);
-      const n = Math.round(CFG.liPer), lineY = sr.height / 2;
-      // Photos and colour plates take turns, each list in its own order for this group.
-      const shuffled = (keep) => LIFE_POOL.map((_, i) => i).filter((i) => keep(LIFE_POOL[i][0].startsWith("#")))
-        .sort((a, b) => hash(a, g * 7 + 1) - hash(b, g * 7 + 1));
-      const photos = shuffled((plate) => !plate), plates = shuffled((plate) => plate);
-      for (let i = 0; i < n; i++) {
+    // One picture per anchor along the strip (Density per column), photos and plates taking turns.
+    function build() {
+      layer.innerHTML = "";
+      const per = Math.max(1, Math.round(CFG.liDensity)), n = 21 * per;
+      const photos = LIFE_POOL.filter(([src]) => !src.startsWith("#")), plates = LIFE_POOL.filter(([src]) => src.startsWith("#"));
+      items = Array.from({ length: n }, (_, i) => {
         const list = i % 2 === 0 || !plates.length ? photos : plates;
-        const [src, bw, bh] = LIFE_POOL[list[Math.floor(i / 2) % list.length]];
-        const sz = CFG.liSizeMin + (CFG.liSizeMax - CFG.liSizeMin) * hash(g * 31 + i, 3);
-        const w = bw * sz * tu, h = bh * sz * tu;
-        const ox = (hash(g * 13 + i, 5) - 0.5) * 2 * CFG.liSpread * tu;
-        const oy = (hash(g * 17 + i, 7) - 0.5) * 2 * CFG.liLift * tu;
-        const holder = document.createElement("div");
-        holder.className = "lf-pop";
-        holder.style.cssText = `width:${w.toFixed(1)}px;height:${h.toFixed(1)}px;z-index:${10 + (z++ % 500)}`;
-        holder.innerHTML = `<div class="lf-in">${src.startsWith("#") ? `<span style="background:${src}"></span>` : `<img src="frames/${src}.webp" alt="" draggable="false">`}</div>`;
-        layer.appendChild(holder);
-        const it = { el: holder, w, h, ox, oy: lineY + oy - h / 2, x: cur[0] + ox - w / 2, k: 0.4 + hash(g, i + 9), px: [] };
-        holder.style.transform = `translate(${it.x.toFixed(1)}px, ${it.oy.toFixed(1)}px)`;
-        appear(holder, i * CFG.liStagger, -oy);
-        // Fixed pixels near the picture's edges, shown with it, never animated.
+        const [src, bw, bh] = list[Math.floor(hash(i, 41) * list.length)];
+        const sz = CFG.liSizeMin + (CFG.liSizeMax - CFG.liSizeMin) * hash(i, 3);
+        const el = document.createElement("div");
+        el.className = "lf-pop";
+        el.style.width = bw * sz + "px";
+        el.style.height = bh * sz + "px";
+        el.innerHTML = `<div class="lf-in">${src.startsWith("#") ? `<span style="background:${src}"></span>` : `<img src="frames/${src}.webp" alt="" draggable="false">`}</div>`;
+        // Fixed pixels around the picture, part of it: they never animate on their own.
         for (let j = 0; j < Math.round(CFG.lpCount); j++) {
           const q = document.createElement("i");
           q.className = "lf-px";
-          const s = Math.max(3, (CFG.lpMin + (CFG.lpMax - CFG.lpMin) * hash(g * 7 + i * 3 + j, 9)) * tu);
-          const edge = hash(g + i * 13 + j, 2), gap = (CFG.lpGap + hash(g + i, j + 4) * CFG.lpGap) * tu, along = hash(j + i, g + 3);
+          const s = CFG.lpMin + (CFG.lpMax - CFG.lpMin) * hash(i * 3 + j, 9);
+          const edge = hash(i + j * 13, 2), gap = CFG.lpGap * (1 + hash(i, j + 4)), along = hash(j + i, 3);
+          const w = bw * sz, h = bh * sz;
           const [qx, qy] = edge < 0.25 ? [along * w, -gap - s] : edge < 0.5 ? [w + gap, along * h] : edge < 0.75 ? [along * w, h + gap] : [-gap - s, along * h];
-          q.style.cssText = `width:${s.toFixed(0)}px;height:${s.toFixed(0)}px;background:${LIFE_CUBES[(g + i + j) % 3]};z-index:${10 + (z % 500)};visibility:hidden`;
-          q.dataset.dx = qx; q.dataset.dy = qy;
-          layer.appendChild(q);
-          setTimeout(() => { q.style.visibility = ""; }, i * CFG.liStagger);
-          it.px.push(q);
+          q.style.cssText = `left:${qx.toFixed(0)}px;top:${qy.toFixed(0)}px;width:${s.toFixed(0)}px;height:${s.toFixed(0)}px;background:${LIFE_CUBES[(i + j) % 3]}`;
+          el.appendChild(q);
         }
-        comp.push(it);
-      }
-      scrubLabel.textContent = `${String(g + 1).padStart(2, "0")} / ${String(groups()).padStart(2, "0")}`;
+        layer.appendChild(el);
+        return {
+          el, w: bw * sz, h: bh * sz,
+          ax: -15 + (i + 0.5) * (97.333 / per) + (hash(i, 51) - 0.5) * (97.333 / per) * 0.8,  // anchor on the strip, Figma px
+          oy: (hash(i, 7) - 0.5) * 2,       // where it settles, -1 above … 1 below the line
+          ox: (hash(i, 8) - 0.5) * 2,
+        };
+      });
+      key = [CFG.liDensity, CFG.liSizeMin, CFG.liSizeMax, CFG.lpCount, CFG.lpMin, CFG.lpMax, CFG.lpGap].join();
     }
+    build();
 
     function loop(now) {
       if (!alive) return;
       const dt = Math.min(50, now - last); last = now;
-      const sr = strip.getBoundingClientRect(), fr = pf.getBoundingClientRect();
+      const sr = strip.getBoundingClientRect();
       const tu = sr.height / 195;           // strip pixels per Figma pixel
+      if (key !== [CFG.liDensity, CFG.liSizeMin, CFG.liSizeMax, CFG.lpCount, CFG.lpMin, CFG.lpMax, CFG.lpGap].join()) build();
       let local = null;
       if (ptr) {
         const lx = ptr[0] - sr.left, ly = ptr[1] - sr.top, zone = CFG.lhZone * tu;
@@ -1215,43 +1140,43 @@
       const target = local ? 1 : 0;
       const rate = dt / (target ? CFG.lhAttack : CFG.lhRelease);
       A = target ? Math.min(1, A + rate) : Math.max(0, A - rate);
-      if (local) cur = cur ? [cur[0] + (local[0] - cur[0]) * 0.35, cur[1] + (local[1] - cur[1]) * 0.35] : local;
+      if (local) {
+        const k = 1 - Math.pow(1 - CFG.liGlide, dt / 16.7);
+        cur = cur ? [cur[0] + (local[0] - cur[0]) * k, cur[1] + (local[1] - cur[1]) * k] : local;
+      }
+      if (!cur) { requestAnimationFrame(loop); return; }
+      const E = easeOut(A);
 
       // Portraits near the cursor open up: pushed out, scattered and enlarged.
-      if (cur) {
-        const R = CFG.lhRadius * tu, E = easeOut(A);
-        for (const t of tiles) {
-          const cx = (t.x + t.w / 2) * tu, cy = (t.y + t.h / 2) * tu;
-          const dx = cx - cur[0], dy = cy - cur[1], d = Math.hypot(dx, dy) || 1;
-          const f = E * Math.pow(Math.max(0, 1 - d / R), 1.5);
-          const push = CFG.lhPush * tu * f;
-          const tx = (dx / d) * push + t.rx * CFG.lhChaos * push;
-          const ty = (dy / d) * push * 1.4 + t.ry * CFG.lhChaos * push;
-          const ts = 1 + CFG.lhGrow * f * (0.6 + 0.8 * t.rs);
-          const k = 1 - Math.pow(0.82, dt / 16.7);
-          t.cx += (tx - t.cx) * k; t.cy += (ty - t.cy) * k; t.cs += (ts - t.cs) * k;
-          t.el.style.transform = `translate(${t.cx.toFixed(2)}px, ${t.cy.toFixed(2)}px) scale(${t.cs.toFixed(4)})`;
-          t.el.style.zIndex = 1 + Math.round(f * 10);
-        }
+      const R = CFG.lhRadius * tu;
+      for (const t of tiles) {
+        const cx = (t.x + t.w / 2) * tu, cy = (t.y + t.h / 2) * tu;
+        const dx = cx - cur[0], dy = cy - cur[1], d = Math.hypot(dx, dy) || 1;
+        const f = E * Math.pow(Math.max(0, 1 - d / R), 1.5);
+        const push = CFG.lhPush * tu * f;
+        const tx = (dx / d) * push + t.rx * CFG.lhChaos * push;
+        const ty = (dy / d) * push * 1.4 + t.ry * CFG.lhChaos * push;
+        const ts = 1 + CFG.lhGrow * f * (0.6 + 0.8 * t.rs);
+        const k = 1 - Math.pow(0.82, dt / 16.7);
+        t.cx += (tx - t.cx) * k; t.cy += (ty - t.cy) * k; t.cs += (ts - t.cs) * k;
+        t.el.style.transform = `translate(${t.cx.toFixed(2)}px, ${t.cy.toFixed(2)}px) scale(${t.cs.toFixed(4)})`;
+        t.el.style.zIndex = 1 + Math.round(f * 10);
       }
 
-      // Which group is under the cursor; a new group cuts to its collage.
-      if (local) {
-        const colW = (97.333 * tu), cols = Math.max(1, Math.round(CFG.lsCols));
-        const g = Math.min(groups() - 1, Math.max(0, Math.floor((local[0] + 15 * tu) / (colW * cols))));
-        if (g !== seg) { seg = g; build(g, tu, sr); }
-        for (const it of comp) {
-          const k = 1 - Math.pow(1 - CFG.liFollow * it.k, dt / 16.7);
-          it.x += (cur[0] + it.ox - it.w / 2 - it.x) * k;
-          it.el.style.transform = `translate(${it.x.toFixed(1)}px, ${it.oy.toFixed(1)}px)`;
-          for (const q of it.px) q.style.transform = `translate(${(it.x + +q.dataset.dx).toFixed(0)}px, ${(it.oy + +q.dataset.dy).toFixed(0)}px)`;
-        }
-        scrub.style.opacity = CFG.lsLine ? 1 : 0;
-        scrub.style.transform = `translateX(${(local[0] + sr.left - fr.left).toFixed(1)}px)`;
-      } else if (seg !== -1) {
-        seg = -1;
-        clear(false);
-        scrub.style.opacity = 0;
+      // Pictures: a bell around the cursor along the line decides how far each has opened.
+      const reach = CFG.liReach * tu, lineY = sr.height / 2;
+      for (const it of items) {
+        const axp = it.ax * tu, d = axp - cur[0];
+        const g = Math.max(0, 1 - Math.abs(d) / reach);
+        const f = E * Math.pow(g, CFG.liCurve) * (g > 0 ? 1 : 0);
+        if (f < 0.015) { if (it.on) { it.el.style.visibility = "hidden"; it.on = false; } continue; }
+        if (!it.on) { it.el.style.visibility = "visible"; it.on = true; }
+        // Opened pictures spread away from the cursor and off the line, sized by how open they are.
+        const x = cur[0] + d * (1 + CFG.liSpread * f) + it.ox * CFG.liJitter * tu * f;
+        const y = lineY + it.oy * CFG.liLift * tu * Math.pow(f, 0.8);
+        const sc = tu * (0.12 + 0.88 * f);
+        it.el.style.transform = `translate(${(x - (it.w * sc) / 2).toFixed(1)}px, ${(y - (it.h * sc) / 2).toFixed(1)}px) scale(${sc.toFixed(4)})`;
+        it.el.style.zIndex = 10 + Math.round(f * 100);
       }
       requestAnimationFrame(loop);
     }
@@ -1517,7 +1442,6 @@
             <div class="lf-strip" data-rv="section">${tiles.join("")}<div class="lf-layer"></div></div>
             <h2 class="lf-h1" data-rv="title">Life at Percepta</h2>
             <p class="lf-desc" data-rv="section"><span>Percepta takes AI out of the labs and into the industries that need it most. </span><span>We’re hiring mission-driven builders who want their work to matter.</span></p>
-            <div class="lf-scrub" aria-hidden="true"><span></span></div>
             <div class="pf-noise"></div>
           </div>`;
       },
