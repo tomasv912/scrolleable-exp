@@ -542,6 +542,7 @@
   }
   .nb-front p { margin: 0; line-height: 1.14; }
   .nb-front .nb-body p + p { margin-top: 1.14em; }
+  .nb-page > p, .nb-body, .nb-mark, .nb-photo { position: relative; }
   .nb-back {
     display: flex;
     flex-direction: column;
@@ -561,17 +562,36 @@
   }
   .nb-cast.r { left: calc(var(--nu) * 514); background: linear-gradient(90deg, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0) var(--w, 50%)); transform: translateZ(3.2px); }
   .nb-cast.l { left: 0; background: linear-gradient(270deg, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0) var(--w, 50%)); transform: translateZ(3.2px); }
-  .nb-rings {
+  /* Spiral: each wire is a loop around the turning axis (x 494), drawn as short 3D segments in the
+     same space as the pages, tilted so it reads as the Figma arc from above. */
+  .nb-wire {
     position: absolute;
-    left: calc(var(--nu) * 458);
-    top: calc(var(--nu) * 18);
-    width: calc(var(--nu) * 72);
-    height: calc(var(--nu) * 510);
-    z-index: 3;
+    left: 0;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    transform-origin: calc(var(--nu) * 494) 0;
+    transform: rotateX(-18deg);
     pointer-events: none;
-    filter: drop-shadow(0 calc(var(--nu) * 2) calc(var(--nu) * 2) rgb(0 0 0 / 0.25));
   }
-  .nb-rings svg { position: absolute; left: 0; width: 100%; height: auto; display: block; overflow: visible; }
+  .nb-wire i {
+    position: absolute;
+    top: calc(var(--nu) * -2);
+    left: calc(var(--nu) * var(--x) - var(--nu) * var(--c) / 2);
+    width: calc(var(--nu) * var(--c) + 0.8px);
+    height: calc(var(--nu) * 4);
+    border-radius: calc(var(--nu) * 2);
+    background: linear-gradient(rgb(0 0 0 / 0.5), rgb(255 255 255 / 0.18) 40%, rgb(0 0 0 / 0.55)), hsl(0 0% var(--l));
+    transform: translateZ(calc(var(--nu) * var(--z))) rotateY(var(--b));
+  }
+  .nb-hole {
+    position: absolute;
+    width: calc(var(--nu) * 14);
+    height: calc(var(--nu) * 21);
+    border-radius: calc(var(--nu) * 3);
+    background: #272727;
+    box-shadow: inset 0 calc(var(--nu) * 2) calc(var(--nu) * 2) rgb(0 0 0 / 0.5);
+  }
   .nb-tabs { position: absolute; left: calc(var(--nu) * 988); top: 0; width: calc(var(--nu) * 40); height: 100%; z-index: 2; }
   .nb-tab {
     position: absolute;
@@ -593,10 +613,10 @@
     border-radius: 0 calc(var(--nu) * 2) calc(var(--nu) * 12) 0;
     filter: drop-shadow(calc(var(--nu) * 2) calc(var(--nu) * 1) calc(var(--nu) * 2) rgb(0 0 0 / 0.15));
     cursor: pointer;
-    transition: transform 0.35s var(--ease-out), background-color 0.35s;
+    transition: background-color 0.35s, filter 0.35s;
   }
-  .nb-tab:hover { transform: translateX(calc(var(--nu) * 4)); }
-  .nb-tab.is-on { background: #272727; z-index: 10; transform: translateX(calc(var(--nu) * 2)); }
+  .nb-tab:hover { filter: drop-shadow(calc(var(--nu) * 2) calc(var(--nu) * 1) calc(var(--nu) * 2) rgb(0 0 0 / 0.15)) brightness(0.94); }
+  .nb-tab.is-on { background: #272727; z-index: 10; }
   .nb-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @container (max-width: 760px) {
     .pf2 { --nu: calc((100cqw - 32px) / 1023); }
@@ -626,13 +646,6 @@
   }
 </style>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <defs>
-    <linearGradient id="nb-wire" x1="6.6" y1="0" x2="72.6" y2="0" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#1F1F1F"/><stop offset="0.15" stop-color="#404040"/><stop offset="0.5" stop-color="#838383"/><stop offset="0.85" stop-color="#404040"/><stop offset="1" stop-color="#1F1F1F"/>
-    </linearGradient>
-  </defs>
-</svg>
 <main class="home" id="home">
   <header class="home-head">
     <h1>Percepta <span>/ Brand concepts</span></h1>
@@ -1100,14 +1113,16 @@
       w: 1920, h: 1253,
       render(o = {}) {
         const S = o.mini ? 1 : Math.round(CFG.nbStrips);
-        const front = `<div class="nb-page nb-front">
+        const holes = (x) => Array.from({ length: 9 }, (_, k) =>
+          `<i class="nb-hole" style="left:calc(var(--nu) * ${x});top:calc(var(--nu) * ${20 + 61 * k})"></i>`).join("");
+        const front = `<div class="nb-page nb-front">${holes(2)}
             <p>[What we do ]</p>
             <div class="nb-body">
               <p>We help state governments deliver faster, more transparent services to citizens by replacing manual, years-long permitting and licensing processes with intelligent, self-service experiences.</p>
               <p>We embed directly within agencies to build AI-powered tools that streamline intake, surface dependencies, and bring clarity to processes that have been opaque for decades.</p>
             </div>
           </div>`;
-        const back = `<div class="nb-page nb-back">
+        const back = `<div class="nb-page nb-back">${holes(458)}
             <svg class="nb-mark" viewBox="0 0 32 40" aria-hidden="true"><path fill="#272727" d="M8 40H0V32H8V40ZM32 32H8V24H24V8H32V32ZM8 24H0V16H8V24ZM24 8H0V0H24V8Z"/></svg>
             <img class="nb-photo" src="frames/industries-photo.webp" alt="" draggable="false">
           </div>`;
@@ -1126,9 +1141,13 @@
           return `<div class="nb-sheet" data-i="${i}" style="--S:${S}">${inner.replace('class="nb-strip s0"',
             `class="nb-strip s0" style="transform:${restTransform(side, r)}"`)}</div>`;
         };
-        const ring = `<svg viewBox="0 0 72 21"><rect width="14" height="21" fill="#272727"/><rect x="58" width="14" height="21" fill="#272727"/>
-            <path transform="translate(-3.85 -1.6)" d="M72.6 1.6C72.6 4.58791 71.3721 7.49254 68.5854 8.57048C62.3477 10.9833 51.0168 12.5201 39.8308 12.6H39.3692C28.1832 12.5201 16.8523 10.9833 10.6146 8.57048C7.82792 7.49254 6.6 4.58791 6.6 1.6" stroke-width="4" stroke="url(#nb-wire)" fill="none"/>
-            <path transform="translate(-3.85 7.4)" d="M72.6 1.6C72.6 4.58791 71.3721 7.49254 68.5854 8.57048C62.3477 10.9833 51.0168 12.5201 39.8308 12.6H39.3692C28.1832 12.5201 16.8523 10.9833 10.6146 8.57048C7.82792 7.49254 6.6 4.58791 6.6 1.6" stroke-width="4" stroke="url(#nb-wire)" fill="none"/></svg>`;
+        // Wire loops: radius 30 around the axis, 10 segments each, two wires per ring like the Figma drawing.
+        const R = 30, SEG = 10, chord = 2 * R * Math.sin(Math.PI / SEG / 2);
+        const wire = (top) => `<div class="nb-wire" style="top:calc(var(--nu) * ${top})">${Array.from({ length: SEG }, (_, i) => {
+          const a = Math.PI * (i + 0.5) / SEG;
+          return `<i style="--x:${(494 + R * Math.cos(a)).toFixed(2)};--z:${(R * Math.sin(a)).toFixed(2)};--c:${chord.toFixed(2)};--b:${(90 - a * 180 / Math.PI).toFixed(2)}deg;--l:${(14 + 42 * Math.sin(a)).toFixed(0)}%"></i>`;
+        }).join("")}</div>`;
+        const wires = Array.from({ length: 9 }, (_, k) => wire(20 + 61 * k + 4) + wire(20 + 61 * k + 13)).join("");
         return `
           <div class="pf pf2">
             ${NAV}
@@ -1139,9 +1158,8 @@
               <div class="nb-book" style="--persp:${CFG.nbPersp}">
                 ${Array.from({ length: 8 }, (_, i) => sheet(i)).join("")}
                 <div class="nb-cast r"></div><div class="nb-cast l"></div>
+                ${wires}
               </div>
-              <div class="nb-rings">${Array.from({ length: 9 }, (_, k) =>
-                ring.replace("<svg ", `<svg style="top:${((2 + 61 * k) / 510 * 100).toFixed(3)}%" `)).join("")}</div>
               <div class="nb-tabs">${TABS.map(([label, top, h, c], i) =>
                 `<span class="nb-tab${i === 0 ? " is-on" : ""}" data-tab="${i}" style="top:calc(var(--nu) * ${top});height:calc(var(--nu) * ${h});--tc:${c};z-index:${4 - i}">${label}</span>`).join("")}</div>
             </div>
