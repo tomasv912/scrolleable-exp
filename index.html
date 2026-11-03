@@ -521,12 +521,12 @@
     top: 0;
     bottom: 0;
     left: 0;
-    width: calc(100% + 0.6px);
+    width: calc(100% + 1.6px);
     overflow: hidden;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
   }
-  .nb-face.back { transform: rotateY(180deg); left: -0.6px; }
+  .nb-face.back { transform: rotateY(180deg); left: -1.6px; }
   .nb-face > i { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
   .nb-page {
     position: absolute;
@@ -550,7 +550,18 @@
   }
   .nb-front p { margin: 0; line-height: 1.14; }
   .nb-front .nb-body p + p { margin-top: 1.14em; }
-  .nb-page > p, .nb-body, .nb-mark, .nb-photo { position: relative; }
+  .nb-page > p, .nb-body, .nb-mark, .nb-photo, .nb-snap { position: relative; }
+  .nb-snap {
+    display: block;
+    width: calc(var(--nu) * 378);
+    height: calc(var(--nu) * 378);
+    margin: calc(var(--nu) * 5);
+    transform: rotate(var(--rot));
+    background: #ece8e3;
+    box-shadow: 0 1px 1px rgb(0 0 0 / 0.2), 3px 0 4px rgb(0 0 0 / 0.2);
+  }
+  .nb-snap img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .nb-snap::after { content: ""; position: absolute; inset: 0; box-shadow: inset 1px 0 4px rgb(255 255 255 / 0.5), inset calc(var(--nu) * 120) 0 calc(var(--nu) * 40) rgb(255 255 255 / 0.1); }
   .nb-back {
     display: flex;
     flex-direction: column;
@@ -1497,17 +1508,28 @@
         const S = o.mini ? 1 : Math.round(CFG.nbStrips);
         const holes = (x) => Array.from({ length: 9 }, (_, k) =>
           `<i class="nb-hole" style="left:calc(var(--nu) * ${x});top:calc(var(--nu) * ${20 + 61 * k})"></i>`).join("");
-        const front = `<div class="nb-page nb-front">${holes(2)}
+        // Copy on each sheet's front, and the photo that faces it on the left once the sheet before is turned.
+        const COPY = [
+          "We help state governments deliver faster, more transparent services to citizens by replacing manual, years-long permitting and licensing processes with intelligent, self-service experiences.",
+          "We embed within banks and asset managers to modernize operations at the core, automating fraud detection, streamlining compliance and KYC workflows, and re-engineering client onboarding and portfolio operations.",
+          "We partner with global manufacturers to build AI-native supply chains, automating procurement and supplier management, deploying predictive systems that identify and mitigate risk in real time, and optimizing inventory allocation across complex, multi-country operations.",
+          "We embed directly within agencies to build AI-powered tools that streamline intake, surface dependencies, and bring clarity to processes that have been opaque for decades.",
+        ];
+        // Same size as the Figma photo, each tilted its own way, never more than 5 degrees either side.
+        const PHOTOS = [["industries-photo.webp", 0], ["industries-finance.webp", 3.2], ["industries-supply.webp", -4.1], ["industries-health.webp", 2.4]];
+        const front = (i) => `<div class="nb-page nb-front">${holes(2)}
             <p>[What we do ]</p>
-            <div class="nb-body">
-              <p>We help state governments deliver faster, more transparent services to citizens by replacing manual, years-long permitting and licensing processes with intelligent, self-service experiences.</p>
-              <p>We embed directly within agencies to build AI-powered tools that streamline intake, surface dependencies, and bring clarity to processes that have been opaque for decades.</p>
-            </div>
+            <div class="nb-body"><p>${COPY[i]}</p></div>
           </div>`;
-        const back = `<div class="nb-page nb-back">${holes(458)}
+        const back = (i) => {
+          const [f, deg] = PHOTOS[i] || PHOTOS[0];
+          const img = deg ? `<span class="nb-snap" style="--rot:${deg}deg"><img src="frames/${f}" alt="" draggable="false"></span>`
+            : `<img class="nb-photo" src="frames/${f}" alt="" draggable="false">`;
+          return `<div class="nb-page nb-back">${holes(458)}
             <svg class="nb-mark" viewBox="0 0 32 40" aria-hidden="true"><path fill="#272727" d="M8 40H0V32H8V40ZM32 32H8V24H24V8H32V32ZM8 24H0V16H8V24ZM24 8H0V0H24V8Z"/></svg>
-            <img class="nb-photo" src="frames/industries-photo.webp" alt="" draggable="false">
+            ${img}
           </div>`;
+        };
         // A sheet is a chain of vertical strips, each hinged on the one before it, so the paper can bend.
         const sheet = (i) => {
           const [label, top, h, c] = TABS[i];
@@ -1517,8 +1539,8 @@
           for (let k = S - 1; k >= 0; k--) {
             const w = 474 / S;
             inner = `<div class="nb-strip s${k}">
-                <div class="nb-face front"><div style="position:absolute;inset:0;transform:translateX(calc(var(--nu) * ${-k * w}))">${front}</div><i></i></div>
-                <div class="nb-face back"><div style="position:absolute;inset:0;transform:translateX(calc(var(--nu) * ${-(S - 1 - k) * w}))">${back}</div><i></i></div>
+                <div class="nb-face front"><div style="position:absolute;inset:0;transform:translateX(calc(var(--nu) * ${-k * w}))">${front(i)}</div><i></i></div>
+                <div class="nb-face back"><div style="position:absolute;inset:0;transform:translateX(calc(var(--nu) * ${-(S - 1 - k) * w}))">${back(i + 1)}</div><i></i></div>
                 ${inner}
               </div>`;
           }
@@ -1540,7 +1562,7 @@
             <div class="nb-wrap" data-rv="section">
               <div class="nb-shadow"><i></i><i></i></div>
               <div class="nb-book" style="--persp:${CFG.nbPersp}">
-                <div class="nb-cover l">${back}</div>
+                <div class="nb-cover l">${back(0)}</div>
                 <div class="nb-cover r"><div class="nb-page" style="box-shadow:none"></div></div>
                 ${TABS.map((_, i) => sheet(i)).join("")}
                 <div class="nb-cast r"></div><div class="nb-cast l"></div>
